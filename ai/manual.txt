@@ -1,0 +1,169 @@
+==============================
+AI IMAGE RECOGNITION PIPELINE
+==============================
+
+Author: Samuel Furda
+Project: Hatogoya / AI Module
+------------------------------
+
+This manual describes the complete process for creating, training, exporting, and serving
+an AI-based image recognition model within the Hatogoya project.
+
+Directory: ~/Hatogoya/ai
+
+
+=================================================
+1. DATASET CREATION (HDF5 BUILDER)
+=================================================
+Files:
+- ai/src/hdf5_builder.py
+- ai/data/manifest.csv
+Output:
+- ai/data/dataset.h5
+
+Purpose:
+Reads images and labels from a manifest CSV file and converts them into a single
+efficiently accessible HDF5 dataset.
+
+Usage:
+    python -m ai.src.hdf5_builder --manifest ai/data/manifest.csv --out ai/data/dataset.h5 --img_size 224
+
+Result:
+    ai/data/dataset.h5 containing train/val/test splits and metadata.
+
+
+=================================================
+2. MODEL TRAINING
+=================================================
+Files:
+- ai/src/train.py
+- ai/src/hdf5_dataset.py
+- ai/config/train.yaml
+
+Purpose:
+Trains an image classification model (default: EfficientNet-B0) using the dataset.h5 file.
+
+Usage:
+    python -m ai.src.train --config ai/config/train.yaml
+
+Outputs:
+    ai/models/best.pt     → Best-performing checkpoint
+    ai/models/last.pt     → Last training epoch
+    ai/models/classes.txt → List of class labels
+
+
+=================================================
+3. MODEL EVALUATION
+=================================================
+Files:
+- ai/src/eval.py
+- ai/config/train.yaml
+
+Purpose:
+Evaluates the model on the test split of dataset.h5 and prints accuracy, F1 score, and confusion matrix.
+
+Usage:
+    python -m ai.src.eval --config ai/config/train.yaml
+
+Example Output:
+    Overall: accuracy=0.9440 macroF1=0.9361
+
+
+=================================================
+4. MODEL EXPORT (ONNX FORMAT)
+=================================================
+Files:
+- ai/src/export_onnx.py
+
+Purpose:
+Converts the best.pt PyTorch model into a portable ONNX format for deployment.
+
+Usage:
+    python -m ai.src.export_onnx --config ai/config/train.yaml
+
+Output:
+    ai/models/model.onnx  → Universal inference model
+    ai/models/classes.txt → Class labels
+
+
+=================================================
+5. INFERENCE SERVER (FASTAPI)
+=================================================
+Files:
+- ai/src/infer_service/app.py
+
+Purpose:
+Serves the ONNX model via an HTTP REST API using FastAPI.
+
+Usage:
+    uvicorn ai.src.infer_service.app:app --host 0.0.0.0 --port 8000 --reload
+
+Endpoints:
+    GET  /health   → Returns model info
+    POST /predict  → Upload an image and get top-k predictions
+
+Swagger UI:
+    http://127.0.0.1:8000/docs
+
+
+=================================================
+6. LOCAL CLIENT
+=================================================
+Files:
+- ai/src/infer_client.py
+
+Purpose:
+Sends image(s) to the FastAPI inference endpoint and prints top-k predictions.
+
+Usage:
+    python -m ai.src.infer_client --url http://127.0.0.1:8000 --topk 3 /path/to/image.jpg
+
+Example Output:
+    === /path/to/image.jpg ===
+     1. cat                            p=0.9215
+     2. dog                            p=0.0582
+     3. rabbit                         p=0.0203
+
+
+=================================================
+7. ENVIRONMENT SETUP
+=================================================
+Run in WSL (Ubuntu 22.04):
+
+    sudo apt update && sudo apt install -y libhdf5-dev
+    python3 -m venv .venv
+    source .venv/bin/activate
+
+Install dependencies (CPU):
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+    pip install timm albumentations scikit-learn opencv-python-headless h5py tqdm onnx onnxruntime fastapi uvicorn[standard] pyyaml matplotlib requests
+
+For GPU (optional):
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+and set device: "cuda" in ai/config/train.yaml
+
+
+=================================================
+8. QUICK START SUMMARY
+=================================================
+1️⃣ Create dataset:
+    python -m ai.src.hdf5_builder --manifest ai/data/manifest.csv --out ai/data/dataset.h5
+
+2️⃣ Train:
+    python -m ai.src.train --config ai/config/train.yaml
+
+3️⃣ Evaluate:
+    python -m ai.src.eval --config ai/config/train.yaml
+
+4️⃣ Export:
+    python -m ai.src.export_onnx --config ai/config/train.yaml
+
+5️⃣ Serve:
+    uvicorn ai.src.infer_service.app:app --host 0.0.0.0 --port 8000 --reload
+
+6️⃣ Predict:
+    python -m ai.src.infer_client --url http://127.0.0.1:8000 --topk 3 /path/to/image.jpg
+
+=================================================
+END OF MANUAL
+=================================================

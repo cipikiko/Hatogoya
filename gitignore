@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data & artifacts
+*.h5
+*.csv
+*.zip
+*.tar
+*.gz
+
+# Models
+*.pt
+*.onnx
+ai/models/
+!ai/models/classes.txt
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db

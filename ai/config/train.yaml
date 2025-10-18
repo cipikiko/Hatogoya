@@ -1,0 +1,32 @@
+# =========================================================
+#  Training configuration for image classification with HDF5
+# =========================================================
+
+task: classification
+seed: 42
+
+data:
+  use_hdf5: true
+  hdf5_path: "ai/data/dataset.h5"   
+  img_size: 224                     
+  num_workers: 2                    
+
+train:
+  model_name: "efficientnet_b0"     
+  batch_size: 16                    
+  epochs: 15                        
+  lr: 3e-4                         
+  weight_decay: 1e-4
+  label_smoothing: 0.1
+  max_grad_norm: 1.0
+  early_stop_patience: 5            
+  device: "cpu"                     
+
+paths:
+  best_ckpt: "ai/models/best.pt"
+  last_ckpt: "ai/models/last.pt"
+
+export:
+  onnx_path: "ai/models/model.onnx"
+  input_name: "input"
+  output_name: "logits"
