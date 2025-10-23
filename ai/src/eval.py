@@ -28,9 +28,9 @@ def device_from_cfg(cfg):
 
 def val_transforms(img_size: int):
     return Compose([
-        Resize(img_size, img_size),
-        CenterCrop(img_size, img_size),
-        Normalize(IMAGENET_MEAN, IMAGENET_STD),
+        Resize(height=img_size, width=img_size),
+        CenterCrop(height=img_size, width=img_size),
+        Normalize((0.485,0.456,0.406), (0.229,0.224,0.225)),
         ToTensorV2(),
     ])
 

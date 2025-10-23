@@ -1,32 +1,26 @@
-# =========================================================
-#  Training configuration for image classification with HDF5
-# =========================================================
-
-task: classification
-seed: 42
-
 data:
+  hdf5_path: ai/data/plantnet_300K_bytes.h5
+  img_size: 800
+  num_workers: 0
+  cuda_prefetch: true
+  prefetch_factor: 2
   use_hdf5: true
-  hdf5_path: "ai/data/dataset.h5"   
-  img_size: 224                     
-  num_workers: 2                    
 
 train:
-  model_name: "efficientnet_b0"     
-  batch_size: 16                    
-  epochs: 15                        
-  lr: 3e-4                         
-  weight_decay: 1e-4
-  label_smoothing: 0.1
+  model_name: convnext_tiny.fb_in22k_ft_in1k
+  batch_size: 2
+  accumulate_steps: 12           # effective batch 24
+  grad_checkpoint: true
+  lr: 1.6e-4
+  weight_decay: 0.05
+  epochs: 30
+  warmup_epochs: 3
+  early_stop_patience: 8
   max_grad_norm: 1.0
-  early_stop_patience: 5            
-  device: "cpu"                     
+  label_smoothing: 0.0
+  mixup_alpha: 0.1
+  use_weighted_sampler: true
 
-paths:
-  best_ckpt: "ai/models/best.pt"
-  last_ckpt: "ai/models/last.pt"
-
-export:
-  onnx_path: "ai/models/model.onnx"
-  input_name: "input"
-  output_name: "logits"
+  # NEW (fast validation at high res)
+  val_batch_size: 4              # try 3–4; increase until it fits
+  val_max_batches: 200           # cap per-epoch validation work
