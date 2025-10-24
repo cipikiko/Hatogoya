@@ -1,8 +1,14 @@
-\## 🧩 Pridané úpravy
+\# Pridané úpravy
 
 
 
-\- Implementácia okna pre \*\*QR kód\*\*  
+\## Implementácia okna pre QR kód  
 
-&nbsp; (aby bol Samko spokojný 😄)
+&nbsp; 
+
+```bash
+
+(aby bol Samko spokojný 😄)
+
+```
 
