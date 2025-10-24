@@ -1,14 +1,8 @@
-
-
----
+🧩 Pridané úpravy
 
 
 
-\### ✨ Výsledok na GitHube:
-
-\# 🧩 Pridané úpravy  
-
-\## Implementácia okna pre QR kód  
+Implementácia okna pre QR kód
 
 
 
@@ -16,5 +10,5 @@
 
 (aby bol Samko spokojný 😄)
 
-
+```
 
