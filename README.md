@@ -1,2 +1,10 @@
-TU KUKAJ SAMO OPRAVIL SOM TO
+\*\*Pridane upravy\*\*
+
+
+
+-implementacia okna pre QR KOD
+
+
+
+\*aby si bol samko spokojny\*
 
