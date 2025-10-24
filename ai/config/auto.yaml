@@ -1,0 +1,28 @@
+seed: 42
+data:
+  hdf5_path: ai/data/plantnet_300K_bytes.h5
+  img_size: 224
+  num_workers: 8
+  prefetch_factor: 2
+  cuda_prefetch: true
+train:
+  device: cuda
+  model_name: resnet50
+  img_size: 224
+  batch_size: 1
+  val_batch_size: 4
+  epochs: 1
+  lr: 7.8125e-06
+  weight_decay: 0.0001
+  label_smoothing: 0.0
+  warmup_epochs: 3
+  grad_checkpoint: false
+  use_weighted_sampler: true
+  accumulate_steps: 1
+  mixup_alpha: 0.4
+  max_grad_norm: 1.0
+  val_max_batches: null
+  max_steps_per_epoch: null
+paths:
+  best_ckpt: ai/models/best.pt
+  last_ckpt: ai/models/last.pt

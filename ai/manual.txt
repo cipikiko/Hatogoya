@@ -1,0 +1,20 @@
+# HDF5 builders / converters
+python -m ai.src.dataio.hdf5_builder --help
+python -m ai.src.dataio.plantnet_to_hdf5 --help
+python -m ai.src.dataio.plantnet_to_hdf5_encoded --help
+
+# Datasets are imported by others (no direct entrypoint)
+
+# ONNX export and client
+python -m ai.src.inference.export_onnx --help
+python -m ai.src.inference.infer_client --help
+
+#train
+python -m ai.src.training.cli.train --config ai/config/train.yaml
+
+# Evaluation and reporting
+python -m ai.src.evals.eval --help
+python -m ai.src.evals.eval_report --help
+
+# Training plots
+python -m ai.src.viz.plot_training --help

@@ -1,7 +1,0 @@
-Samples: 30614
-Val accuracy: 0.6071
-Val macro-F1: 0.4329
-Top-5 accuracy: 0.9471
-Classes (logits): 1081
-Present in val (unique y_true): 864
-Eval time: 583.6s
