@@ -1,8 +1,14 @@
-\# 🧩 Pridané úpravy
+
+
+---
 
 
 
-\## Implementácia okna pre QR kód
+\### ✨ Výsledok na GitHube:
+
+\# 🧩 Pridané úpravy  
+
+\## Implementácia okna pre QR kód  
 
 
 
