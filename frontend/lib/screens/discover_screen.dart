@@ -325,15 +325,19 @@ class ScanPlantDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Scan a Plant',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text(
+              'Scan a Plant',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             const Text(
-              'Take a photo or upload an image to identify plants in the garden',
+              'Choose how you want to identify the plant',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textGrey),
             ),
             const SizedBox(height: 20),
+
+            // 🌿 Ikona / placeholder
             Container(
               height: 200,
               width: double.infinity,
@@ -343,31 +347,55 @@ class ScanPlantDialog extends StatelessWidget {
                 color: Colors.grey[50],
               ),
               child: const Center(
-                child: Icon(Icons.camera_alt_outlined,
+                child: Icon(Icons.document_scanner_outlined,
                     size: 50, color: Colors.grey),
               ),
             ),
+
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+
+            // 📸 Možnosti
+            Column(
               children: [
                 ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    // TODO: implement scan via camera
+                  },
                   icon: const Icon(Icons.camera_alt_outlined),
-                  label: const Text('Take Photo'),
+                  label: const Text('Scan Plant (Camera)'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 48),
                   ),
                 ),
+                const SizedBox(height: 10),
                 OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    // TODO: implement upload
+                  },
                   icon: const Icon(Icons.upload_file_outlined),
-                  label: const Text('Upload'),
+                  label: const Text('Upload Photo'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    // TODO: implement QR scanner
+                  },
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Scan QR Code'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 15),
+
+            const SizedBox(height: 20),
+
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -381,7 +409,7 @@ class ScanPlantDialog extends StatelessWidget {
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Tip: Point your camera at a plant in the garden for instant identification and information.',
+                      'Tip: You can identify plants by taking a photo, uploading an image, or scanning a QR code in the garden.',
                       style: TextStyle(
                           fontSize: 12, color: AppColors.textGrey, height: 1.3),
                     ),

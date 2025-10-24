@@ -6,7 +6,7 @@ import 'screens/challenges_screen.dart';
 import 'screens/profile_screen.dart';
 import 'widgets/custom_drawer.dart';
 import 'utils/app_colors.dart';
-import 'utils/theme_manager.dart'; // ✅ import
+import 'utils/theme_manager.dart';
 
 void main() {
   runApp(const BotanikApp());
@@ -18,30 +18,68 @@ class BotanikApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<ThemeMode>(
-      valueListenable: ThemeManager.themeNotifier, // ✅ použitie
+      valueListenable: ThemeManager.themeNotifier,
       builder: (context, mode, _) {
         return MaterialApp(
           title: 'Botanik',
           themeMode: mode,
+
+          // ☀️ Svetlá téma
           theme: ThemeData(
-            scaffoldBackgroundColor: AppColors.background,
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: Colors.white,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: AppColors.primaryGreen,
+              foregroundColor: Colors.white,
+            ),
             colorScheme: const ColorScheme.light(
               primary: AppColors.primaryGreen,
               secondary: AppColors.secondaryGreen,
             ),
+            cardColor: Colors.white,
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: Colors.white,
+              hintStyle: const TextStyle(color: AppColors.textGrey),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            textTheme: const TextTheme(
+              bodyMedium: TextStyle(color: Colors.black87),
+            ),
             useMaterial3: true,
           ),
+
+          // 🌙 Tmavá téma
           darkTheme: ThemeData(
+            brightness: Brightness.dark,
             scaffoldBackgroundColor: const Color(0xFF121212),
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.primaryGreen,
-              secondary: AppColors.secondaryGreen,
-            ),
             appBarTheme: const AppBarTheme(
               backgroundColor: Color(0xFF1E1E1E),
               foregroundColor: Colors.white,
             ),
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primaryGreen,
+              secondary: AppColors.secondaryGreen,
+            ),
+            cardColor: const Color(0xFF1E1E1E),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: const Color(0xFF1E1E1E),
+              hintStyle: const TextStyle(color: Colors.white70),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            textTheme: const TextTheme(
+              bodyMedium: TextStyle(color: Colors.white),
+            ),
+            useMaterial3: true,
           ),
+
           debugShowCheckedModeBanner: false,
           home: const MainScreen(),
         );
@@ -91,7 +129,7 @@ class _MainScreenState extends State<MainScreen> {
       drawer: const CustomDrawer(),
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Theme.of(context).bottomAppBarTheme.color ?? Colors.white,
+        backgroundColor: Theme.of(context).cardColor,
         currentIndex: _selectedIndex,
         selectedItemColor: AppColors.primaryGreen,
         unselectedItemColor: Colors.grey,

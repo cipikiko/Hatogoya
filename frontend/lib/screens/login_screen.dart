@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/app_colors.dart';
+import '../utils/theme_manager.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -16,8 +17,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = ThemeManager.isDarkMode();
+    final textColor = isDark ? Colors.white : Colors.black;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: isDark ? const Color(0xFF121212) : AppColors.background,
       appBar: AppBar(
         title: const Text('Prihlásenie'),
         backgroundColor: AppColors.primaryGreen,
@@ -30,18 +34,29 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 30),
-            const Text(
+            Text(
               'Vitaj späť 🌿',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
             ),
             const SizedBox(height: 10),
-            const Text('Prihlás sa do svojho účtu a pokračuj v objavovaní rastlín.'),
+            Text(
+              'Prihlás sa do svojho účtu a pokračuj v objavovaní rastlín.',
+              style: TextStyle(color: isDark ? Colors.white70 : AppColors.textGrey),
+            ),
             const SizedBox(height: 30),
 
             TextField(
               controller: emailCtrl,
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 labelText: 'E-mail',
+                labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+                filled: true,
+                fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
@@ -49,8 +64,12 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: passwordCtrl,
               obscureText: true,
+              style: TextStyle(color: textColor),
               decoration: InputDecoration(
                 labelText: 'Heslo',
+                labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+                filled: true,
+                fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
@@ -62,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white, // 👈 doplnené
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
@@ -74,11 +93,13 @@ class _LoginScreenState extends State<LoginScreen> {
             Center(
               child: GestureDetector(
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()));
+                  Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
                 },
-                child: const Text('Zabudli ste heslo?',
-                    style: TextStyle(color: AppColors.primaryGreen)),
+                child: const Text(
+                  'Zabudli ste heslo?',
+                  style: TextStyle(color: AppColors.primaryGreen),
+                ),
               ),
             ),
 
@@ -86,14 +107,14 @@ class _LoginScreenState extends State<LoginScreen> {
             Center(
               child: GestureDetector(
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => const RegisterScreen()));
+                  Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
                 },
-                child: const Text.rich(
+                child: Text.rich(
                   TextSpan(
                     text: 'Nie ste prihlásený? ',
-                    style: TextStyle(color: Colors.black87),
-                    children: [
+                    style: TextStyle(color: textColor),
+                    children: const [
                       TextSpan(
                         text: 'Zaregistrujte sa',
                         style: TextStyle(
