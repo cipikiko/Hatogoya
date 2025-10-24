@@ -1,10 +1,8 @@
-\*\*Pridane upravy\*\*
+\## 🧩 Pridané úpravy
 
 
 
--implementacia okna pre QR KOD
+\- Implementácia okna pre \*\*QR kód\*\*  
 
-
-
-\*aby si bol samko spokojny\*
+&nbsp; (aby bol Samko spokojný 😄)
 
