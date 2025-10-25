@@ -4,6 +4,7 @@ import 'screens/discover_screen.dart';
 import 'screens/plants_screen.dart';
 import 'screens/challenges_screen.dart';
 import 'screens/profile_screen.dart';
+import 'game/game_screen.dart'; // 🎮 nová cesta
 import 'widgets/custom_drawer.dart';
 import 'utils/app_colors.dart';
 import 'utils/theme_manager.dart';
@@ -55,16 +56,16 @@ class BotanikApp extends StatelessWidget {
           // 🌙 Tmavá téma
           darkTheme: ThemeData(
             brightness: Brightness.dark,
-            scaffoldBackgroundColor: const Color(0xFF121212),
+            scaffoldBackgroundColor: const Color(0xFF1B1B1B), // 🔆 mierne svetlejšie
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFF1E1E1E),
+              backgroundColor: Color(0xFF202020),
               foregroundColor: Colors.white,
             ),
             colorScheme: const ColorScheme.dark(
               primary: AppColors.primaryGreen,
               secondary: AppColors.secondaryGreen,
             ),
-            cardColor: const Color(0xFF1E1E1E),
+            cardColor: const Color(0xFF222222), // 🔆 jemne odlíšené od pozadia
             inputDecorationTheme: InputDecorationTheme(
               filled: true,
               fillColor: const Color(0xFF1E1E1E),
@@ -98,11 +99,13 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
+  // 🔥 Poradie stránok (Home, Discover, Challenges, Game, Plants, Profile)
   final List<Widget> _pages = const [
     HomeScreen(),
     DiscoverScreen(),
-    PlantsScreen(),
     ChallengesScreen(),
+    GameScreen(), // 🎮 z lib/game/
+    PlantsScreen(),
     ProfileScreen(),
   ];
 
@@ -112,6 +115,8 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Botanik'),
@@ -128,21 +133,37 @@ class _MainScreenState extends State<MainScreen> {
       ),
       drawer: const CustomDrawer(),
       body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Theme.of(context).cardColor,
-        currentIndex: _selectedIndex,
-        selectedItemColor: AppColors.primaryGreen,
-        unselectedItemColor: Colors.grey,
-        showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Discover'),
-          BottomNavigationBarItem(icon: Icon(Icons.eco_outlined), label: 'Plants'),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events_outlined), label: 'Challenges'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
-        ],
+
+      // 🧭 Upravená spodná lišta
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF222222) : const Color(0xFFF4F4F4),
+          border: Border(
+            top: BorderSide(
+              color: isDark ? Colors.black54 : Colors.grey.shade300,
+              width: 0.5,
+            ),
+          ),
+        ),
+        child: BottomNavigationBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          currentIndex: _selectedIndex,
+          selectedItemColor: AppColors.primaryGreen,
+          unselectedItemColor: Colors.grey,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          type: BottomNavigationBarType.fixed,
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.emoji_events_outlined), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.sports_esports_outlined), label: ''), // 🎮
+            BottomNavigationBarItem(icon: Icon(Icons.local_florist_outlined), label: ''),
+            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+          ],
+        ),
       ),
     );
   }
