@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
-import '../utils/theme_manager.dart';
+import '../theme/tokens.dart';
+import '../widgets/neon.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -12,60 +12,70 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController emailCtrl = TextEditingController();
 
+  InputDecoration _dec(String label) => InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(color: AppTokens.textSecondary),
+    filled: true,
+    fillColor: AppTokens.cardDark,
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      borderSide: const BorderSide(color: AppTokens.cardBorder),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      borderSide: const BorderSide(color: AppTokens.emerald500, width: 1.5),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final isDark = ThemeManager.isDarkMode();
-    final textColor = isDark ? Colors.white : Colors.black;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : AppColors.background,
       appBar: AppBar(
         title: const Text('Zabudnuté heslo'),
-        backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: AppTokens.tealGradient)),
+        elevation: 0,
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 30),
-            Text('Obnoviť heslo 🔑',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textColor)),
-            const SizedBox(height: 10),
-            Text('Zadajte svoj e-mail, kam vám pošleme odkaz na obnovenie hesla.',
-                style: TextStyle(color: isDark ? Colors.white70 : AppColors.textGrey)),
-            const SizedBox(height: 30),
+        children: [
+          const Text('Obnoviť heslo', style: AppTokens.h1),
+          const SizedBox(height: 6),
+          const Text(
+            'Zadajte svoj e-mail, kam vám pošleme odkaz na obnovenie hesla.',
+            style: AppTokens.body,
+          ),
+          const SizedBox(height: 20),
 
-            TextField(
+          NeonCard(
+            color: AppTokens.cardDark,
+            shadows: AppTokens.tileShadow,
+            padding: const EdgeInsets.all(14),
+            child: TextField(
               controller: emailCtrl,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: 'E-mail',
-                labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+              style: const TextStyle(color: AppTokens.textPrimary),
+              decoration: _dec('E-mail'),
             ),
-            const SizedBox(height: 20),
+          ),
 
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.email_outlined),
-                label: const Text('Odoslať link na reset hesla'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.email_outlined),
+              label: const Text('Odoslať link na reset hesla'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTokens.emerald500,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

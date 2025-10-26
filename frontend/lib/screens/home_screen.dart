@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
+import '../theme/tokens.dart';
+import '../widgets/neon.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -7,435 +8,460 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Welcome back, Explorer!',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Continue your botanical journey',
-            style: TextStyle(fontSize: 15, color: AppColors.textGrey),
-          ),
-          const SizedBox(height: 25),
-
-          // 🌿 Gradient Level Card
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // ========= Level Card =========
+          PulseGlow(
+            color: AppTokens.teal400,
+            child: NeonCard(
+              gradient: AppTokens.tealGradient,
+              shadows: AppTokens.glow(AppTokens.teal400, blur: 18),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(children: const [
+                        SizedBox(
+                          width: 56,
+                          height: 56,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: Colors.white24,
+                              borderRadius: BorderRadius.all(Radius.circular(16)),
+                            ),
+                            child: Center(
+                              child: BounceGentle(
+                                child: Icon(Icons.eco, color: Colors.white, size: 28),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        _LevelInfo(),
+                      ]),
+                      const _XpPill(current: 340, total: 500),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(6)),
+                    child: LinearProgressIndicator(
+                      value: 340 / 500,
+                      minHeight: 8,
+                      backgroundColor: Colors.white24,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 6,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.all(18),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.eco, color: Colors.white, size: 22),
-                        ),
-                        SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Level 8',
-                              style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500),
-                            ),
-                            Text(
-                              'Plant Explorer',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '340 / 500 XP',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12),
-                LinearProgressIndicator(
-                  value: 340 / 500,
-                  backgroundColor: Colors.white24,
-                  color: Colors.white,
-                  minHeight: 6,
-                ),
-              ],
             ),
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 22),
 
-          // 📊 Stats Cards
+          // ========= Stat Tiles =========
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              _StatCard(
+              _StatTile(
+                gradient: AppTokens.statOrange,
+                shadowSeed: AppTokens.orange,
                 icon: Icons.local_fire_department,
-                iconColor: Color(0xFFFFA726),
-                value: '12',
+                number: '12',
                 label: 'Day Streak',
+                numberColor: Color(0xFFFFEDD5),
+                labelColor: Color(0xFFFFD2A1),
               ),
-              _StatCard(
+              _StatTile(
+                gradient: AppTokens.statGreen,
+                shadowSeed: AppTokens.emerald500,
                 icon: Icons.eco,
-                iconColor: Color(0xFF66BB6A),
-                value: '47',
+                number: '47',
                 label: 'Plants',
+                numberColor: Color(0xFFCCFBE6),
+                labelColor: AppTokens.textSecondary,
               ),
-              _StatCard(
+              _StatTile(
+                gradient: AppTokens.statPurple,
+                shadowSeed: AppTokens.purple,
                 icon: Icons.workspace_premium_rounded,
-                iconColor: Color(0xFFBA68C8),
-                value: '23',
+                number: '23',
                 label: 'Badges',
+                numberColor: Color(0xFFEDE9FE),
+                labelColor: Color(0xFFD8B4FE),
               ),
             ],
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 22),
 
-          // 🪴 Daily Quest
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 3))
-              ],
-            ),
-            padding: const EdgeInsets.all(16),
+          // ========= Daily Quest =========
+          NeonCard(
+            color: AppTokens.cardDark,
+            shadows: AppTokens.tileShadow,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Daily Quest',
-                      style:
-                      TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.accentYellow.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        '+50 XP',
-                        style: TextStyle(
-                            color: AppColors.accentYellow,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                const Text('Discover 3 New Plants',
-                    style: TextStyle(color: Colors.black87)),
-                const SizedBox(height: 12),
-                LinearProgressIndicator(
-                  value: 1 / 3,
-                  backgroundColor: Colors.grey[300],
-                  color: AppColors.primaryGreen,
-                  minHeight: 5,
-                ),
-                const SizedBox(height: 4),
-                const Align(
-                    alignment: Alignment.centerRight,
-                    child: Text('Progress 1/3',
-                        style:
-                        TextStyle(color: Colors.black54, fontSize: 12))),
+              children: const [
+                _RowTitle(), // "Daily Quest" + XP chip
+                SizedBox(height: 8),
+                Text('Discover 3 New Plants', style: AppTokens.body),
+                SizedBox(height: 12),
+                Text('Progress', style: TextStyle(color: AppTokens.textSecondary, fontSize: 12)),
+                SizedBox(height: 6),
+                GradientProgressBar(value: 1 / 3),
               ],
             ),
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 22),
 
-          const Text(
-            'Recent Achievements',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          const SizedBox(height: 12),
+          // ========= Recent Achievements =========
+          const _SectionTitle(title: 'Recent Achievements'),
+          const SizedBox(height: 10),
 
           const _AchievementCard(
             title: 'Early Bird',
             subtitle: 'Unlocked today',
+            colorBlob: LinearGradient(
+              colors: [Color(0xFFFFA94D), Color(0xFFFF6B6B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             icon: Icons.wb_sunny_outlined,
-            color: Color(0xFFFFCC80),
           ),
+          const SizedBox(height: 12),
           const _AchievementCard(
             title: 'Plant Expert',
             subtitle: 'Unlocked today',
+            colorBlob: LinearGradient(
+              colors: [Color(0xFF34D399), Color(0xFF14B8A6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             icon: Icons.grass_rounded,
-            color: Color(0xFFA5D6A7),
           ),
+          const SizedBox(height: 12),
           const _AchievementCard(
             title: 'Week Warrior',
             subtitle: 'Unlocked today',
+            colorBlob: LinearGradient(
+              colors: [Color(0xFFFDE68A), Color(0xFFF59E0B)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
             icon: Icons.flash_on_outlined,
-            color: Color(0xFFFFF59D),
           ),
-          const ExploreGardenCard(), // 🌿 Nová klikateľná karta
+
+          const SizedBox(height: 12),
+
+          // ========= Explore the Garden =========
+          GestureDetector(
+            onTap: () {
+              showDialog(context: context, builder: (_) => const GardenMapDialog());
+            },
+            child: NeonCard(
+              gradient: AppTokens.tealGradient,
+              shadows: AppTokens.glow(AppTokens.teal600, blur: 14),
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: const [
+                  Icon(Icons.location_on_outlined, color: Colors.white, size: 28),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Explore the Garden', style: AppTokens.titleWhite),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
         ],
       ),
     );
   }
 }
 
-// 📊 Komponenty
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String value;
-  final String label;
+/* ================== Mini-widgets ================== */
 
-  const _StatCard({
+class _LevelInfo extends StatelessWidget {
+  const _LevelInfo();
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: [
+          Text('Level 8', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+          SizedBox(width: 6),
+
+        ]),
+        Text('Plant Explorer', style: AppTokens.titleWhite),
+      ],
+    );
+  }
+}
+
+class _XpPill extends StatelessWidget {
+  final int current, total;
+  const _XpPill({required this.current, required this.total});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text('$current', style: const TextStyle(color: Colors.white, fontSize: 22)),
+          const SizedBox(height: 2),
+          Text('/ $total XP', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+}
+
+class _RowTitle extends StatelessWidget {
+  const _RowTitle();
+  @override
+  Widget build(BuildContext context) {
+    return Row(children: const [
+      Text('Daily Quest', style: AppTokens.h1),
+      SizedBox(width: 8),
+      NeonChip('+50 XP'),
+    ]);
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  const _SectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        color: AppTokens.textPrimary,
+        fontWeight: FontWeight.w600,
+        fontSize: 16,
+      ),
+    );
+  }
+}
+
+
+class _AchievementCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final LinearGradient colorBlob;
+  final IconData icon;
+
+  const _AchievementCard({
+    required this.title,
+    required this.subtitle,
+    required this.colorBlob,
     required this.icon,
-    required this.iconColor,
-    required this.value,
+
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NeonCard(
+      color: AppTokens.cardDark,
+      shadows: AppTokens.tileShadow,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              gradient: colorBlob,
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+              boxShadow: AppTokens.tileShadow,
+            ),
+            child: const Center(child: Icon(Icons.circle, size: 0)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Expanded(
+                    child: Text(title,
+                        style: const TextStyle(color: AppTokens.textPrimary, fontWeight: FontWeight.w600)),
+                  ),
+                  const Icon(Icons.star, size: 16, color: Color(0xFFFDE68A)),
+                ]),
+                const SizedBox(height: 4),
+                Text(subtitle, style: const TextStyle(color: AppTokens.textSecondary)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatTile extends StatelessWidget {
+  final LinearGradient Function() gradient;
+  final Color shadowSeed;
+  final IconData icon;
+  final String number;
+  final String label;
+  final Color numberColor;
+  final Color labelColor;
+
+  const _StatTile({
+    required this.gradient,
+    required this.shadowSeed,
+    required this.icon,
+    required this.number,
     required this.label,
+    required this.numberColor,
+    required this.labelColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 100,
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      width: 104,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 3))
-        ],
+        color: AppTokens.cardDark,
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        border: Border.all(color: AppTokens.cardBorder),
+        boxShadow: AppTokens.glow(shadowSeed, blur: 12),
       ),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
       child: Column(
         children: [
-          Icon(icon, color: iconColor, size: 30),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              gradient: gradient(),
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+              boxShadow: AppTokens.glow(shadowSeed, blur: 10),
+            ),
+            child: Center(child: BounceGentle(child: Icon(icon, color: Colors.white, size: 22))),
+          ),
           const SizedBox(height: 8),
-          Text(value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          Text(number, style: TextStyle(color: numberColor, fontWeight: FontWeight.w700, fontSize: 18)),
+          Text(label, style: TextStyle(color: labelColor, fontSize: 12)),
+          const SizedBox(height: 0),
+
         ],
       ),
     );
   }
 }
 
-class _AchievementCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
+/* ============== Garden Map Dialog (svetlý pastel tyrkys-modrý) ============== */
 
-  const _AchievementCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: ListTile(
-        leading: CircleAvatar(
-          radius: 20,
-          backgroundColor: color.withValues(alpha: 0.5),
-          child: Icon(icon, color: AppColors.primaryGreen),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
-      ),
-    );
-  }
-}
-
-// 🌿 Klikateľná karta "Explore the Garden"
-class ExploreGardenCard extends StatelessWidget {
-  const ExploreGardenCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => const GardenMapDialog(),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFFE0F7FA), // modrastá
-              Color(0xFFE8F5E9), // zelenkastá
-            ],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.location_on_outlined,
-                color: AppColors.primaryGreen, size: 30),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
-                    'Explore the Garden',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Visit new areas and discover plants',
-                    style: TextStyle(color: AppColors.textGrey),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// 🗺️ Dialóg s mapou záhrady
 class GardenMapDialog extends StatelessWidget {
   const GardenMapDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      insetPadding: const EdgeInsets.all(20),
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(18),
       child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE0F7FA), Color(0xFFE8F5E9)],
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE9FFF7), Color(0xFFE6F4FF)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 8))],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Garden Map',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Explore different zones and discover new plants',
-              style: TextStyle(color: AppColors.textGrey),
-            ),
-            const SizedBox(height: 20),
-
-            // 🟢 Placeholder pre mapu
-            Container(
-              height: 200,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                ),
-              ),
-              child: const Center(
-                child: Icon(Icons.map_outlined,
-                    size: 80, color: AppColors.primaryGreen),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🪴 Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.circle, color: AppColors.primaryGreen, size: 12),
-                SizedBox(width: 5),
-                Text('Discovered', style: TextStyle(fontSize: 13)),
-                SizedBox(width: 15),
-                Icon(Icons.circle, color: Colors.grey, size: 12),
-                SizedBox(width: 5),
-                Text('Locked', style: TextStyle(fontSize: 13)),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🧭 Tlačidlá
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Material(
+          type: MaterialType.transparency,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Back'),
+                const Text('Garden Map', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                const Text('Explore different zones and discover new plants',
+                    style: TextStyle(color: Color(0xFF047857))),
+                const SizedBox(height: 14),
+                Container(
+                  height: 240,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                    border: Border.all(color: AppTokens.emerald500, width: 1),
+                  ),
+                  child: const Center(child: Icon(Icons.map_outlined, size: 84, color: AppTokens.teal600)),
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text('Start Tour'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.white,
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Color(0xFFE2F7F1), width: 1),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.touch_app_outlined, color: AppTokens.teal600, size: 18),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text('Tap a location to view details',
+                            style: TextStyle(color: Color(0xFF047857), fontSize: 13)),
+                      ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 10),
+                Row(
+                  children: const [
+                    Icon(Icons.circle, color: AppTokens.emerald500, size: 12),
+                    SizedBox(width: 6),
+                    Text('Discovered', style: TextStyle(fontSize: 12)),
+                    SizedBox(width: 16),
+                    Icon(Icons.circle, color: Colors.grey, size: 12),
+                    SizedBox(width: 6),
+                    Text('Locked', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back),
+                      label: const Text('Back'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTokens.teal600,
+                        side: const BorderSide(color: AppTokens.teal600),
+                      ),
+                    ),
+                    const Spacer(),
+                    ElevatedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Start Tour'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTokens.teal600,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                )
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

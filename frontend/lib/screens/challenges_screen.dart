@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
+import '../theme/tokens.dart';
+import '../widgets/neon.dart';
 
 class ChallengesScreen extends StatelessWidget {
   const ChallengesScreen({super.key});
@@ -11,31 +12,16 @@ class ChallengesScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Challenges',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          const Text('Challenges', style: AppTokens.h1),
           const SizedBox(height: 4),
-          const Text('Complete quests and earn rewards',
-              style: TextStyle(color: AppColors.textGrey)),
+          const Text('Complete quests and earn rewards', style: AppTokens.body),
           const SizedBox(height: 25),
 
-          // 🏆 Total Points Card (upravený gradient)
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 6,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+          // 🏆 Total Points – teal gradient NeonCard
+          NeonCard(
+            gradient: AppTokens.tealGradient,
+            shadows: AppTokens.glow(AppTokens.teal400, blur: 18),
+            radius: AppTokens.radiusMd,
             padding: const EdgeInsets.all(18),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -43,25 +29,20 @@ class ChallengesScreen extends StatelessWidget {
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Total Points',
-                        style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    Text('Total Points', style: TextStyle(color: Colors.white70, fontSize: 14)),
                     SizedBox(height: 4),
                     Text('1,720',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold)),
+                        style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 Container(
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(50),
+                    color: Colors.white.withValues(alpha: 0.22),
+                    shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.emoji_events_outlined,
-                      color: Colors.white, size: 32),
+                  child: const Icon(Icons.emoji_events_outlined, color: Colors.white, size: 32),
                 ),
               ],
             ),
@@ -71,82 +52,58 @@ class ChallengesScreen extends StatelessWidget {
 
           // 🔥 Active Challenges
           const Text('Active Challenges',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
           const SizedBox(height: 10),
 
-          const ChallengeCard(
+          const _ChallengeCard(
             title: 'Weekly Explorer',
             subtitle: 'Visit the garden 5 times this week',
             xp: '+100 XP',
             progress: 3 / 5,
             daysLeft: '3 days left',
-            color: AppColors.primaryGreen,
           ),
-          const ChallengeCard(
+          const _ChallengeCard(
             title: 'Plant Photographer',
             subtitle: 'Take photos of 10 different plants',
             xp: '+75 XP',
             progress: 7 / 10,
             daysLeft: '5 days left',
-            color: AppColors.secondaryGreen,
           ),
-          const ChallengeCard(
+          const _ChallengeCard(
             title: 'Early Bird',
             subtitle: 'Visit the garden before 9 AM',
             xp: '+50 XP',
             progress: 0 / 1,
             daysLeft: 'Today',
-            color: Color(0xFFFFF59D),
           ),
 
           const SizedBox(height: 30),
 
           // 🥇 Leaderboard
           const Text('Leaderboard',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
           const SizedBox(height: 10),
 
-          const LeaderboardTile(
-              position: 1,
-              name: 'Sarah M.',
-              points: 2450,
-              highlightColor: Color(0xFFFFF59D)),
-          const LeaderboardTile(
-              position: 2,
-              name: 'John D.',
-              points: 2180,
-              highlightColor: Color(0xFFB2DFDB)),
-          const LeaderboardTile(
-              position: 3,
-              name: 'Emma L.',
-              points: 1950,
-              highlightColor: Color(0xFFFFCCBC)),
-          const LeaderboardTile(
-              position: 4,
-              name: 'You',
-              points: 1720,
-              highlightColor: Color(0xFFC8E6C9),
-              isUser: true),
-          const LeaderboardTile(
-              position: 5,
-              name: 'Mike R.',
-              points: 1650,
-              highlightColor: Color(0xFFF5F5F5)),
+          const _LeaderboardTile(position: 1, name: 'Sarah M.', points: 2450),
+          const _LeaderboardTile(position: 2, name: 'John D.', points: 2180),
+          const _LeaderboardTile(position: 3, name: 'Emma L.', points: 1950),
+          const _LeaderboardTile(position: 4, name: 'You', points: 1720, isUser: true),
+          const _LeaderboardTile(position: 5, name: 'Mike R.', points: 1650),
 
           const SizedBox(height: 30),
 
           // ✅ Recently Completed
           const Text('Recently Completed',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
           const SizedBox(height: 10),
 
-          const CompletedCard(
+          const _CompletedCard(
             title: 'First Steps',
             subtitle: 'Discover your first plant',
             xp: '+25 XP',
             date: 'Oct 14, 2025',
           ),
-          const CompletedCard(
+          const _CompletedCard(
             title: 'Plant Enthusiast',
             subtitle: 'Discover 25 different plants',
             xp: '+150 XP',
@@ -158,156 +115,143 @@ class ChallengesScreen extends StatelessWidget {
   }
 }
 
-// 🎯 Challenge Card
-class ChallengeCard extends StatelessWidget {
+/* -------------------- Widgets -------------------- */
+
+class _ChallengeCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String xp;
   final double progress;
   final String daysLeft;
-  final Color color;
 
-  const ChallengeCard({
-    super.key,
+  const _ChallengeCard({
     required this.title,
     required this.subtitle,
     required this.xp,
     required this.progress,
     required this.daysLeft,
-    required this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 16)),
-                Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    xp,
-                    style: TextStyle(
-                        color: color.darken(),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(color: Colors.black87)),
-            const SizedBox(height: 10),
-            LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.grey[300],
-              color: color,
-              minHeight: 5,
-            ),
-            const SizedBox(height: 6),
-            Text(daysLeft,
-                style: const TextStyle(fontSize: 12, color: Colors.black54)),
-          ],
-        ),
+    return NeonCard(
+      color: AppTokens.cardDark,
+      shadows: AppTokens.tileShadow,
+      radius: AppTokens.radiusMd,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // header: názov + XP chip
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title,
+                  style: const TextStyle(
+                    color: AppTokens.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  )),
+              NeonChip(xp),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(subtitle, style: const TextStyle(color: AppTokens.textSecondary)),
+          const SizedBox(height: 10),
+
+          // progress bar (emerald → cyan)
+          GradientProgressBar(value: progress.clamp(0, 1), height: 6),
+          const SizedBox(height: 6),
+
+          Text(daysLeft, style: const TextStyle(fontSize: 12, color: AppTokens.textSecondary)),
+        ],
       ),
     );
   }
 }
 
-// 🏅 Leaderboard Tile (upravené s trofejami)
-class LeaderboardTile extends StatelessWidget {
+class _LeaderboardTile extends StatelessWidget {
   final int position;
   final String name;
   final int points;
-  final Color highlightColor;
   final bool isUser;
 
-  const LeaderboardTile({
-    super.key,
+  const _LeaderboardTile({
     required this.position,
     required this.name,
     required this.points,
-    required this.highlightColor,
     this.isUser = false,
   });
 
-  IconData? _getTrophyIcon() {
-    if (position <= 3) return Icons.emoji_events;
-    return null;
-  }
+  IconData? _trophyIcon() => position <= 3 ? Icons.emoji_events : null;
 
-  Color _getTrophyColor() {
+  Color _trophyColor() {
     switch (position) {
       case 1:
-        return const Color(0xFFFFD700); // zlatá
+        return const Color(0xFFFFD700); // gold
       case 2:
-        return const Color(0xFFC0C0C0); // strieborná
+        return const Color(0xFFC0C0C0); // silver
       case 3:
-        return const Color(0xFFCD7F32); // bronzová
+        return const Color(0xFFCD7F32); // bronze
       default:
-        return Colors.grey;
+        return AppTokens.textSecondary;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 3),
-      decoration: BoxDecoration(
-        color: highlightColor.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.white,
-          child: Text('$position',
-              style:
-              const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-        ),
-        title: Row(
-          children: [
-            Text(name,
-                style: TextStyle(
+    return NeonCard(
+      color: AppTokens.cardDark,
+      shadows: AppTokens.tileShadow,
+      radius: AppTokens.radiusSm,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      child: Row(
+        children: [
+          // pozícia
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: AppTokens.cardDark,
+            child: Text(
+              '$position',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: AppTokens.textPrimary),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // meno + trofej
+          Expanded(
+            child: Row(
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: isUser ? AppColors.primaryGreen : Colors.black)),
-            if (position <= 3) ...[
-              const SizedBox(width: 6),
-              Icon(_getTrophyIcon(), color: _getTrophyColor(), size: 18),
-            ],
-          ],
-        ),
-        subtitle: Text('$points points',
-            style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                    color: isUser ? AppTokens.emerald500 : AppTokens.textPrimary,
+                  ),
+                ),
+                if (_trophyIcon() != null) ...[
+                  const SizedBox(width: 6),
+                  Icon(_trophyIcon(), color: _trophyColor(), size: 18),
+                ],
+              ],
+            ),
+          ),
+
+          // body
+          Text('$points pts', style: const TextStyle(color: AppTokens.textSecondary, fontSize: 13)),
+        ],
       ),
     );
   }
 }
 
-// ✅ Completed Challenge Card
-class CompletedCard extends StatelessWidget {
+class _CompletedCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final String xp;
   final String date;
 
-  const CompletedCard({
-    super.key,
+  const _CompletedCard({
     required this.title,
     required this.subtitle,
     required this.xp,
@@ -316,49 +260,39 @@ class CompletedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 15)),
-                Text(subtitle,
-                    style: const TextStyle(color: Colors.black54, fontSize: 13)),
-                const SizedBox(height: 4),
-                Text(date,
-                    style: const TextStyle(color: Colors.black45, fontSize: 11)),
-              ],
-            ),
-            Container(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(xp,
+    return NeonCard(
+      color: AppTokens.cardDark,
+      shadows: AppTokens.tileShadow,
+      radius: AppTokens.radiusMd,
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // texty
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
                   style: const TextStyle(
-                      color: AppColors.primaryGreen,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12)),
-            ),
-          ],
-        ),
+                    color: AppTokens.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  )),
+              Text(subtitle, style: const TextStyle(color: AppTokens.textSecondary, fontSize: 13)),
+              const SizedBox(height: 4),
+              Text(date, style: const TextStyle(color: AppTokens.textSecondary, fontSize: 11)),
+            ],
+          ),
+          // XP chip (žltý)
+          NeonChip(xp),
+        ],
       ),
     );
   }
 }
 
-// 🌈 Helper na stmavenie farby
+/* -------- Helpers -------- */
+
 extension ColorShade on Color {
   Color darken([double amount = .1]) {
     final hsl = HSLColor.fromColor(this);

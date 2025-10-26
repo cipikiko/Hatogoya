@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
-import '../utils/theme_manager.dart';
+import '../theme/tokens.dart';
+import '../widgets/neon.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -15,121 +15,109 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailCtrl = TextEditingController();
   final TextEditingController passwordCtrl = TextEditingController();
 
+  InputDecoration _dec(String label) => InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(color: AppTokens.textSecondary),
+    filled: true,
+    fillColor: AppTokens.cardDark,
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      borderSide: const BorderSide(color: AppTokens.cardBorder),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      borderSide: const BorderSide(color: AppTokens.emerald500, width: 1.5),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final isDark = ThemeManager.isDarkMode();
-    final textColor = isDark ? Colors.white : Colors.black;
-
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF121212) : AppColors.background,
       appBar: AppBar(
         title: const Text('Prihlásenie'),
-        backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: AppTokens.tealGradient)),
         elevation: 0,
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 30),
-            Text(
-              'Vitaj späť 🌿',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Prihlás sa do svojho účtu a pokračuj v objavovaní rastlín.',
-              style: TextStyle(color: isDark ? Colors.white70 : AppColors.textGrey),
-            ),
-            const SizedBox(height: 30),
+        children: [
+          const Text('Vitajte späť', style: AppTokens.h1),
+          const SizedBox(height: 6),
+          const Text('Prihláste sa do svojho účtu a pokračujte v objavovaní!', style: AppTokens.body),
+          const SizedBox(height: 20),
 
-            TextField(
-              controller: emailCtrl,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: 'E-mail',
-                labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordCtrl,
-              obscureText: true,
-              style: TextStyle(color: textColor),
-              decoration: InputDecoration(
-                labelText: 'Heslo',
-                labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
-                filled: true,
-                fillColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          NeonCard(
+            color: AppTokens.cardDark,
+            shadows: AppTokens.tileShadow,
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
+                TextField(
+                  controller: emailCtrl,
+                  style: const TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec('E-mail'),
                 ),
-                child: const Text('Prihlásiť sa', style: TextStyle(fontSize: 16)),
-              ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passwordCtrl,
+                  obscureText: true,
+                  style: const TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec('Heslo'),
+                ),
+              ],
             ),
+          ),
 
-            const SizedBox(height: 15),
-            Center(
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
-                },
-                child: const Text(
-                  'Zabudli ste heslo?',
-                  style: TextStyle(color: AppColors.primaryGreen),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTokens.emerald500,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                 ),
               ),
+              child: const Text('Prihlásiť sa', style: TextStyle(fontSize: 16)),
             ),
+          ),
 
-            const Spacer(),
-            Center(
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                      context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
-                },
-                child: Text.rich(
-                  TextSpan(
-                    text: 'Nie ste prihlásený? ',
-                    style: TextStyle(color: textColor),
-                    children: const [
-                      TextSpan(
-                        text: 'Zaregistrujte sa',
-                        style: TextStyle(
-                          color: AppColors.primaryGreen,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+          const SizedBox(height: 12),
+          Center(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
+              },
+              child: const Text('Zabudli ste heslo?', style: TextStyle(color: AppTokens.emerald500)),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+          Center(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
+              },
+              child: const Text.rich(
+                TextSpan(
+                  text: 'Nie ste prihlásený? ',
+                  style: TextStyle(color: AppTokens.textPrimary),
+                  children: [
+                    TextSpan(
+                      text: 'Zaregistrujte sa',
+                      style: TextStyle(color: AppTokens.emerald500, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

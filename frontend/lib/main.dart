@@ -8,8 +8,10 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/about_screen.dart';
-import 'utils/app_colors.dart';
-import 'utils/theme_manager.dart';
+
+// theme helpers
+import 'theme/tokens.dart';
+import 'widgets/neon.dart';
 
 void main() {
   runApp(const BotanikApp());
@@ -20,203 +22,185 @@ class BotanikApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: ThemeManager.themeNotifier,
-      builder: (context, mode, _) {
-        return MaterialApp(
-          title: 'Botanik',
-          themeMode: mode,
-          theme: ThemeData(
-            brightness: Brightness.light,
-            scaffoldBackgroundColor: Colors.white,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: AppColors.primaryGreen,
-              foregroundColor: Colors.white,
-            ),
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primaryGreen,
-              secondary: AppColors.secondaryGreen,
-            ),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            scaffoldBackgroundColor: const Color(0xFF1B1B1B),
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFF202020),
-              foregroundColor: Colors.white,
-            ),
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.primaryGreen,
-              secondary: AppColors.secondaryGreen,
-            ),
-            useMaterial3: true,
-          ),
-          debugShowCheckedModeBanner: false,
-          home: const MainScreen(),
-        );
-      },
+    return MaterialApp(
+      title: 'Botanik',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: AppTokens.pageBg,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: AppTokens.headerBg,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        colorScheme: const ColorScheme.dark(
+          primary: AppTokens.emerald500,
+          secondary: AppTokens.teal600,
+        ),
+        useMaterial3: true,
+      ),
+      home: const MainScreen(),
     );
   }
 }
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
-
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
+  // vnútorný navigator pre obsah (telo) – bar ostáva
+  final GlobalKey<NavigatorState> _shellNavKey = GlobalKey<NavigatorState>();
+
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = const [
+  // posledná položka v spodnej lište je spúšťač menu (nie tab)
+  final List<Widget> _tabs = const [
     HomeScreen(),
     DiscoverScreen(),
     ChallengesScreen(),
     PlantsScreen(),
-    ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
-    if (index < _pages.length) {
-      setState(() => _selectedIndex = index);
-    } else {
+    if (index == 4) {
       _showBottomMenu(context);
+      return;
     }
+    setState(() {
+      _selectedIndex = index;
+      // pri prepnutí tabu zavri prípadné vnútorné pushed stránky
+      _shellNavKey.currentState?.popUntil((r) => r.isFirst);
+    });
   }
 
-  // 🌿 Moderné menu ako v Duolingu
-  void _showBottomMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade600,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.person, color: AppColors.primaryGreen),
-              title: const Text('Profil'),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _selectedIndex = 4);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.login, color: AppColors.primaryGreen),
-              title: const Text('Prihlásiť sa'),
-              onTap: () {
-                Navigator.pop(context);
-                _openScreen(const LoginScreen());
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_add, color: AppColors.primaryGreen),
-              title: const Text('Registrovať sa'),
-              onTap: () {
-                Navigator.pop(context);
-                _openScreen(const RegisterScreen());
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.settings, color: AppColors.primaryGreen),
-              title: const Text('Nastavenia'),
-              onTap: () {
-                Navigator.pop(context);
-                _openScreen(const SettingsScreen());
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline, color: AppColors.primaryGreen),
-              title: const Text('O aplikácii'),
-              onTap: () {
-                Navigator.pop(context);
-                _openScreen(const AboutScreen());
-              },
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
+  // otvorenie obrazoviek v rámci shell navigátora (bar ostáva)
+  void _pushInShell(Widget screen) {
+    _shellNavKey.currentState?.push(
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 
-  void _openScreen(Widget screen) {
-    Future.delayed(
-      const Duration(milliseconds: 150),
-          () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => screen),
+  // Neon bottom sheet menu
+  void _showBottomMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppTokens.radiusLg),
+        ),
       ),
+      builder: (context) {
+        final mq = MediaQuery.of(context);
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: mq.size.height * 0.7),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: AppTokens.panelGradient(),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppTokens.radiusLg),
+              ),
+              border: Border.all(color: AppTokens.cardBorder, width: 1),
+              boxShadow: AppTokens.glow(AppTokens.teal400, blur: 22),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, 14, 16, 12 + mq.padding.bottom),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppTokens.handle,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      _MenuTile(
+                        label: 'Profil',
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pushInShell(const ProfileScreen());
+                        },
+                      ),
+                      _MenuTile(
+                        label: 'Prihlásiť sa',
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pushInShell(const LoginScreen());
+                        },
+                      ),
+                      _MenuTile(
+                        label: 'Registrovať sa',
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pushInShell(const RegisterScreen());
+                        },
+                      ),
+                      const Divider(color: AppTokens.divider),
+                      _MenuTile(
+                        label: 'Nastavenia',
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pushInShell(const SettingsScreen());
+                        },
+                      ),
+                      _MenuTile(
+                        label: 'O aplikácii',
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pushInShell(const AboutScreen());
+                        },
+                      ),
+                      const SizedBox(height: 6),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
-      // 🌱 Gradientový header hore
+      // horný pás so spoločným gradientom
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(42),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              height: 55,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            ),
-            // 🔹 Svetlo sivá deliaca čiara pod headerom
-            Container(
-              height: 1.5,
-              color: Colors.grey.shade600,
-            ),
+            Container(height: 55, decoration: BoxDecoration(gradient: AppTokens.tealGradient)),
+            Container(height: 1, color: AppTokens.headerSeparator),
           ],
         ),
       ),
 
-      // 📱 Hlavný obsah
-      body: _pages[_selectedIndex],
+      // telo s vnútorným Navigatorom – bar ostáva viditeľný
+      body: Navigator(
+        key: _shellNavKey,
+        onGenerateRoute: (_) => MaterialPageRoute(
+          builder: (_) => _tabs[_selectedIndex],
+        ),
+      ),
 
-      // 🌿 Spodný navigačný bar
       bottomNavigationBar: Container(
         padding: const EdgeInsets.only(top: 6, bottom: 10),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF222222) : const Color(0xFFF4F4F4),
-          border: Border(
-            top: BorderSide(
-              color: Colors.grey.shade600, // 🔹 svetlo sivá deliaca čiara
-              width: 1.5, // 🔹 trošku hrubšia
-            ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              offset: const Offset(0, -1),
-              blurRadius: 3,
-            ),
-          ],
+        decoration: const BoxDecoration(
+          color: AppTokens.navBg,
+          border: Border(top: BorderSide(color: AppTokens.navBorder, width: 1)),
         ),
         child: SizedBox(
           height: 70,
@@ -224,8 +208,8 @@ class _MainScreenState extends State<MainScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             currentIndex: _selectedIndex,
-            selectedItemColor: AppColors.primaryGreen,
-            unselectedItemColor: Colors.grey,
+            selectedItemColor: AppTokens.emerald500,
+            unselectedItemColor: AppTokens.navUnselected,
             showSelectedLabels: false,
             showUnselectedLabels: false,
             type: BottomNavigationBarType.fixed,
@@ -247,10 +231,7 @@ class _MainScreenState extends State<MainScreen> {
                 icon: Image.asset('lib/utils/images/plant.png', height: 28),
                 label: '',
               ),
-              BottomNavigationBarItem(
-                icon: Image.asset('lib/utils/images/user.png', height: 28),
-                label: '',
-              ),
+              // spúšťač menu
               BottomNavigationBarItem(
                 icon: Image.asset('lib/utils/images/filter.png', height: 28),
                 label: '',
@@ -258,6 +239,28 @@ class _MainScreenState extends State<MainScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// položka v bottom-sheet menu (bez ľavého „štvorca“)
+class _MenuTile extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _MenuTile({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return NeonCard(
+      color: AppTokens.cardDark,
+      shadows: AppTokens.tileShadow,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+        title: Text(label, style: const TextStyle(color: AppTokens.textPrimary)),
+        trailing: const Icon(Icons.chevron_right, color: AppTokens.textSecondary),
+        onTap: onTap,
       ),
     );
   }
