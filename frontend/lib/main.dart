@@ -4,8 +4,10 @@ import 'screens/discover_screen.dart';
 import 'screens/plants_screen.dart';
 import 'screens/challenges_screen.dart';
 import 'screens/profile_screen.dart';
-import 'game/game_screen.dart'; // 🎮 nová cesta
-import 'widgets/custom_drawer.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/about_screen.dart';
 import 'utils/app_colors.dart';
 import 'utils/theme_manager.dart';
 
@@ -24,8 +26,6 @@ class BotanikApp extends StatelessWidget {
         return MaterialApp(
           title: 'Botanik',
           themeMode: mode,
-
-          // ☀️ Svetlá téma
           theme: ThemeData(
             brightness: Brightness.light,
             scaffoldBackgroundColor: Colors.white,
@@ -37,26 +37,11 @@ class BotanikApp extends StatelessWidget {
               primary: AppColors.primaryGreen,
               secondary: AppColors.secondaryGreen,
             ),
-            cardColor: Colors.white,
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: Colors.white,
-              hintStyle: const TextStyle(color: AppColors.textGrey),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            textTheme: const TextTheme(
-              bodyMedium: TextStyle(color: Colors.black87),
-            ),
             useMaterial3: true,
           ),
-
-          // 🌙 Tmavá téma
           darkTheme: ThemeData(
             brightness: Brightness.dark,
-            scaffoldBackgroundColor: const Color(0xFF1B1B1B), // 🔆 mierne svetlejšie
+            scaffoldBackgroundColor: const Color(0xFF1B1B1B),
             appBarTheme: const AppBarTheme(
               backgroundColor: Color(0xFF202020),
               foregroundColor: Colors.white,
@@ -65,22 +50,8 @@ class BotanikApp extends StatelessWidget {
               primary: AppColors.primaryGreen,
               secondary: AppColors.secondaryGreen,
             ),
-            cardColor: const Color(0xFF222222), // 🔆 jemne odlíšené od pozadia
-            inputDecorationTheme: InputDecorationTheme(
-              filled: true,
-              fillColor: const Color(0xFF1E1E1E),
-              hintStyle: const TextStyle(color: Colors.white70),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-            ),
-            textTheme: const TextTheme(
-              bodyMedium: TextStyle(color: Colors.white),
-            ),
             useMaterial3: true,
           ),
-
           debugShowCheckedModeBanner: false,
           home: const MainScreen(),
         );
@@ -99,18 +70,100 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  // 🔥 Poradie stránok (Home, Discover, Challenges, Game, Plants, Profile)
   final List<Widget> _pages = const [
     HomeScreen(),
     DiscoverScreen(),
     ChallengesScreen(),
-    GameScreen(), // 🎮 z lib/game/
     PlantsScreen(),
     ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
-    setState(() => _selectedIndex = index);
+    if (index < _pages.length) {
+      setState(() => _selectedIndex = index);
+    } else {
+      _showBottomMenu(context);
+    }
+  }
+
+  // 🌿 Moderné menu ako v Duolingu
+  void _showBottomMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade600,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.person, color: AppColors.primaryGreen),
+              title: const Text('Profil'),
+              onTap: () {
+                Navigator.pop(context);
+                setState(() => _selectedIndex = 4);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.login, color: AppColors.primaryGreen),
+              title: const Text('Prihlásiť sa'),
+              onTap: () {
+                Navigator.pop(context);
+                _openScreen(const LoginScreen());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_add, color: AppColors.primaryGreen),
+              title: const Text('Registrovať sa'),
+              onTap: () {
+                Navigator.pop(context);
+                _openScreen(const RegisterScreen());
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.settings, color: AppColors.primaryGreen),
+              title: const Text('Nastavenia'),
+              onTap: () {
+                Navigator.pop(context);
+                _openScreen(const SettingsScreen());
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: AppColors.primaryGreen),
+              title: const Text('O aplikácii'),
+              onTap: () {
+                Navigator.pop(context);
+                _openScreen(const AboutScreen());
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openScreen(Widget screen) {
+    Future.delayed(
+      const Duration(milliseconds: 150),
+          () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => screen),
+      ),
+    );
   }
 
   @override
@@ -118,51 +171,92 @@ class _MainScreenState extends State<MainScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Botanik'),
-        foregroundColor: Colors.white,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      // 🌱 Gradientový header hore
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(42),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 55,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
             ),
-          ),
+            // 🔹 Svetlo sivá deliaca čiara pod headerom
+            Container(
+              height: 1.5,
+              color: Colors.grey.shade600,
+            ),
+          ],
         ),
       ),
-      drawer: const CustomDrawer(),
+
+      // 📱 Hlavný obsah
       body: _pages[_selectedIndex],
 
-      // 🧭 Upravená spodná lišta
+      // 🌿 Spodný navigačný bar
       bottomNavigationBar: Container(
+        padding: const EdgeInsets.only(top: 6, bottom: 10),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF222222) : const Color(0xFFF4F4F4),
           border: Border(
             top: BorderSide(
-              color: isDark ? Colors.black54 : Colors.grey.shade300,
-              width: 0.5,
+              color: Colors.grey.shade600, // 🔹 svetlo sivá deliaca čiara
+              width: 1.5, // 🔹 trošku hrubšia
             ),
           ),
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          currentIndex: _selectedIndex,
-          selectedItemColor: AppColors.primaryGreen,
-          unselectedItemColor: Colors.grey,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          type: BottomNavigationBarType.fixed,
-          onTap: _onItemTapped,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.emoji_events_outlined), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.sports_esports_outlined), label: ''), // 🎮
-            BottomNavigationBarItem(icon: Icon(Icons.local_florist_outlined), label: ''),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: ''),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              offset: const Offset(0, -1),
+              blurRadius: 3,
+            ),
           ],
+        ),
+        child: SizedBox(
+          height: 70,
+          child: BottomNavigationBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            currentIndex: _selectedIndex,
+            selectedItemColor: AppColors.primaryGreen,
+            unselectedItemColor: Colors.grey,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            type: BottomNavigationBarType.fixed,
+            onTap: _onItemTapped,
+            items: [
+              BottomNavigationBarItem(
+                icon: Image.asset('lib/utils/images/home.png', height: 28),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Image.asset('lib/utils/images/loupe.png', height: 28),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Image.asset('lib/utils/images/trophy.png', height: 28),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Image.asset('lib/utils/images/plant.png', height: 28),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Image.asset('lib/utils/images/user.png', height: 28),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Image.asset('lib/utils/images/filter.png', height: 28),
+                label: '',
+              ),
+            ],
+          ),
         ),
       ),
     );
