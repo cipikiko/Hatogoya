@@ -9,21 +9,18 @@ class PulseGlow extends StatelessWidget {
   final double blur;
   const PulseGlow({super.key, required this.child, required this.color, this.blur = 20});
 
+
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: .85, end: 1.0),
-      duration: AppTokens.dPulse,
-      curve: Curves.easeInOut,
-      builder: (_, s, __) => DecoratedBox(
-        decoration: BoxDecoration(boxShadow: [
-          BoxShadow(color: color.withValues(alpha: .35 * s), blurRadius: blur * s, spreadRadius: 1),
-        ]),
-        child: Transform.scale(scale: s, child: child),
-      ),
+    return DecoratedBox(
+      decoration: BoxDecoration(boxShadow: [
+        BoxShadow(color: color.withValues(alpha: .35), blurRadius: blur, spreadRadius: 1),
+      ]),
+      child: child,
     );
   }
 }
+
 
 /// Jemný vertikálny bounce pre ikony / blob
 class BounceGentle extends StatelessWidget {

@@ -38,12 +38,21 @@ class _PlantsScreenState extends State<PlantsScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text('All Plants',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTokens.textPrimary)),
+          const Text(
+            'All Plants',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: AppTokens.textPrimary,
+            ),
+          ),
           const SizedBox(height: 4),
-          const Text('Browse, search, and explore discovered plants', style: AppTokens.body),
+          const Text(
+            'Browse, search, and explore discovered plants',
+            style: AppTokens.body,
+          ),
           const SizedBox(height: 20),
 
           // 🔍 Search Bar (dark + tokens)
@@ -82,7 +91,8 @@ class _PlantsScreenState extends State<PlantsScreen> {
                   color: AppTokens.cardDark,
                   shadows: AppTokens.tileShadow,
                   radius: AppTokens.radiusMd,
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  padding:
+                  const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                   margin: const EdgeInsets.symmetric(vertical: 6),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(AppTokens.radiusMd),
@@ -90,7 +100,8 @@ class _PlantsScreenState extends State<PlantsScreen> {
                         ? () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Opened details for ${plant['name']}'),
+                          content:
+                          Text('Opened details for ${plant['name']}'),
                           duration: const Duration(seconds: 1),
                         ),
                       );
@@ -105,13 +116,20 @@ class _PlantsScreenState extends State<PlantsScreen> {
                           decoration: BoxDecoration(
                             gradient: found ? AppTokens.statGreen() : null,
                             color: found ? null : AppTokens.cardDark,
-                            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                            border: Border.all(color: found ? Colors.transparent : AppTokens.cardBorder),
-                            boxShadow: found ? AppTokens.glow(AppTokens.emerald500, blur: 10) : null,
+                            borderRadius:
+                            BorderRadius.circular(AppTokens.radiusSm),
+                            border: Border.all(
+                                color: found
+                                    ? Colors.transparent
+                                    : AppTokens.cardBorder),
+                            boxShadow: found
+                                ? AppTokens.glow(AppTokens.emerald500, blur: 10)
+                                : null,
                           ),
                           child: Icon(
                             Icons.eco_outlined,
-                            color: Colors.white.withValues(alpha: found ? 1 : 0.6),
+                            color:
+                            Colors.white.withValues(alpha: found ? 1 : 0.6),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -121,28 +139,42 @@ class _PlantsScreenState extends State<PlantsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(plant['name'] as String,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w600, fontSize: 15, color: AppTokens.textPrimary)),
-                              Text(plant['latin'] as String,
-                                  style: const TextStyle(
-                                      fontStyle: FontStyle.italic, color: AppTokens.textSecondary)),
+                              Text(
+                                plant['name'] as String,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 15,
+                                  color: AppTokens.textPrimary,
+                                ),
+                              ),
+                              Text(
+                                plant['latin'] as String,
+                                style: const TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  color: AppTokens.textSecondary,
+                                ),
+                              ),
                             ],
                           ),
                         ),
 
                         // status badge
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: (found ? AppTokens.emerald500 : Colors.grey)
-                                .withValues(alpha: found ? 0.18 : 0.18),
+                            color: (found
+                                ? AppTokens.emerald500
+                                : Colors.grey)
+                                .withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             found ? 'Discovered' : 'Locked',
                             style: TextStyle(
-                              color: found ? AppTokens.emerald500 : Colors.grey[400],
+                              color: found
+                                  ? AppTokens.emerald500
+                                  : Colors.grey[400],
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
                             ),

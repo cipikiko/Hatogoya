@@ -1,99 +1,79 @@
+// lib/game/game_screen.dart
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
+import '../theme/tokens.dart';
+import '../widgets/neon.dart';
+import '../screens/plants_screen.dart';
 
-class GameScreen extends StatefulWidget {
+class GameScreen extends StatelessWidget {
   const GameScreen({super.key});
 
-  @override
-  State<GameScreen> createState() => _GameScreenState();
-}
+  void _openPlants(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: AppTokens.pageBg,
+          body: Stack(
+            children: [
+              const PlantsScreen(),
 
-class _GameScreenState extends State<GameScreen> {
-  bool _showUI = false;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _showUI = true;
-      });
-    });
-  }
-
-  Future<void> _confirmExit() async {
-    final shouldExit = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Opustiť hru?'),
-        content: const Text('Naozaj chcete odísť z hry?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Zostať'),
+              // 🔙 just a small arrow, no square, placed high-left under status bar
+              SafeArea(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10, left: 8), // a bit lower and inset
+                    child: IconButton(
+                      iconSize: 26,                 // slightly bigger
+                      splashRadius: 22,             // smaller ripple
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppTokens.textPrimary,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Odísť'),
-          ),
-        ],
+        ),
       ),
     );
-
-    if (shouldExit ?? false) {
-      Navigator.pop(context);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTokens.pageBg,
       body: Stack(
         children: [
-          // 🌱 Lottie animácia na pozadí
-          Positioned.fill(
-            child: Lottie.asset(
-              'lib/game/assets/lottie/Walking Pothos.json',
-              fit: BoxFit.cover,
-              repeat: true,
+          // prázdne tmavé pozadie, pripravené na herné prvky
+
+          // 📖 pravý horný roh: Neon tlačidlo s ikonou knihy (spúšťa PlantsScreen)
+          Positioned(
+            top: 16,
+            right: 16,
+            child: NeonCard(
+              color: AppTokens.cardDark,
+              shadows: AppTokens.tileShadow,
+              radius: AppTokens.radiusMd,
+              padding: const EdgeInsets.all(10),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                onTap: () => _openPlants(context),
+                child: const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(
+                    Icons.menu_book_rounded,
+                    color: AppTokens.textPrimary,
+                  ),
+                ),
+              ),
             ),
           ),
-
-          // 🌸 Po načítaní sa zobrazí UI (tlačidlo na exit)
-          if (_showUI)
-            Positioned(
-              top: 40,
-              left: 20,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 30),
-                onPressed: _confirmExit,
-              ),
-            ),
-
-          // 🪴 Textový overlay
-          if (_showUI)
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    '🌿 Botanická hra 🌿',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Získavaj XP a pomáhaj rastline rásť!',
-                    style: TextStyle(color: Colors.white70),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );

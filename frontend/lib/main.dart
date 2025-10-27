@@ -8,6 +8,7 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/about_screen.dart';
+import 'game/game_screen.dart';
 
 // theme helpers
 import 'theme/tokens.dart';
@@ -60,8 +61,8 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _tabs = const [
     HomeScreen(),
     DiscoverScreen(),
+    GameScreen(),
     ChallengesScreen(),
-    PlantsScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -224,11 +225,11 @@ class _MainScreenState extends State<MainScreen> {
                 label: '',
               ),
               BottomNavigationBarItem(
-                icon: Image.asset('lib/utils/images/trophy.png', height: 28),
+                icon: Image.asset('lib/utils/images/plant.png', height: 28),
                 label: '',
               ),
               BottomNavigationBarItem(
-                icon: Image.asset('lib/utils/images/plant.png', height: 28),
+                icon: Image.asset('lib/utils/images/trophy.png', height: 28),
                 label: '',
               ),
               // spúšťač menu
@@ -244,7 +245,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-/// položka v bottom-sheet menu (bez ľavého „štvorca“)
+/// položka v bottom-sheet menu – o trochu väčšie bubliny, rozostupy zostanú vzdušné
 class _MenuTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
@@ -255,13 +256,25 @@ class _MenuTile extends StatelessWidget {
     return NeonCard(
       color: AppTokens.cardDark,
       shadows: AppTokens.tileShadow,
+      radius: AppTokens.radiusMd,                                   // o chlp väčší radius
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      margin: const EdgeInsets.symmetric(vertical: 8),              // mierne väčší rozostup
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-        title: Text(label, style: const TextStyle(color: AppTokens.textPrimary)),
-        trailing: const Icon(Icons.chevron_right, color: AppTokens.textSecondary),
+        dense: true,
+        visualDensity: const VisualDensity(vertical: -1, horizontal: -1),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+        title: Text(
+          label,
+          style: const TextStyle(fontSize: 15, color: AppTokens.textPrimary), // o trochu väčšie písmo
+        ),
+        trailing: const Icon(
+          Icons.chevron_right,
+          color: AppTokens.textSecondary,
+          size: 20,                                                  // o trochu väčšia šípka
+        ),
         onTap: onTap,
       ),
     );
   }
 }
+
