@@ -308,6 +308,7 @@ class _AchievementCard extends StatelessWidget {
     );
   }
 }
+/// kra kra kra
 
 class _StatTile extends StatelessWidget {
   final LinearGradient Function() gradient;

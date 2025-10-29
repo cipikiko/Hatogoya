@@ -9,7 +9,7 @@ class PulseGlow extends StatelessWidget {
   final double blur;
   const PulseGlow({super.key, required this.child, required this.color, this.blur = 20});
 
-
+  /// kra kra kra
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(

@@ -138,6 +138,7 @@ class DiscoverScreen extends StatelessWidget {
     );
   }
 }
+/// kra kra kra
 
 // 🌿 Plant Card bez obrázku (neon štýl)
 class PlantCard extends StatelessWidget {

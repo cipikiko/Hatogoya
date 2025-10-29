@@ -15,3 +15,4 @@ class ThemeManager {
     return themeNotifier.value == ThemeMode.dark;
   }
 }
+/// kra kra kra

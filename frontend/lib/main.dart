@@ -244,7 +244,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-
+/// kra kra kra
 /// položka v bottom-sheet menu – o trochu väčšie bubliny, rozostupy zostanú vzdušné
 class _MenuTile extends StatelessWidget {
   final String label;
