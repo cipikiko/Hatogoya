@@ -3,7 +3,7 @@
 
 
 Implementácia okna pre QR kód
-
+SAMUEAL FURDA
 
 
 ```bash
