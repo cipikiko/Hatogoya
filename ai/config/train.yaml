@@ -1,16 +1,16 @@
 seed: 42
 data:
   hdf5_path: ai/data/plantnet_300K_bytes.h5
-  img_size: 800            # bigger input → more detail; safe default
+  img_size: 720            # bigger input → more detail; safe default
   num_workers: 8
   prefetch_factor: 2
-  cuda_prefetch: true
+  cuda_prefetch: false
 
 train:
   device: cuda
   model_name: convnext_tiny     # fine; you can swap to convnext_tiny or effnetv2_m later
   batch_size: 6          # keep per-step mem tiny…
-  accumulate_steps: 8     # …but reach effective global batch = 32
+  accumulate_steps: 6     # …but reach effective global batch = 32
   val_batch_size: 8        # bigger is fine at eval (no grads)
   epochs: 12               # enough to actually learn
   lr: 0.0005             # linear-scale from base 5e-4 @ GBS 64 → here GBS 32
