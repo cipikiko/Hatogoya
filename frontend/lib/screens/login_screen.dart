@@ -29,7 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
       borderSide: const BorderSide(color: AppTokens.emerald500, width: 1.5),
     ),
   );
-  /// kra kra kra
 
   @override
   Widget build(BuildContext context) {

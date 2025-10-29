@@ -26,7 +26,6 @@ class _PlantsScreenState extends State<PlantsScreen> {
   ];
 
   String _searchQuery = '';
-  /// kra kra kra
 
   @override
   Widget build(BuildContext context) {

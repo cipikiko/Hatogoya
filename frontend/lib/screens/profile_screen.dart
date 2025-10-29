@@ -244,7 +244,6 @@ class _AchievementIcon extends StatelessWidget {
     required this.color,
     this.locked = false,
   });
-  /// kra kra kra
 
   @override
   Widget build(BuildContext context) {
