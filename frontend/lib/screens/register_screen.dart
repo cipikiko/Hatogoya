@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
+import '../theme/tokens.dart';
+import '../widgets/neon.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -14,63 +16,113 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController passCtrl = TextEditingController();
   final TextEditingController confirmCtrl = TextEditingController();
 
+  InputDecoration _dec(String label) => InputDecoration(
+    labelText: label,
+    labelStyle: const TextStyle(color: AppTokens.textSecondary),
+    filled: true,
+    fillColor: AppTokens.cardDark,
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      borderSide: const BorderSide(color: AppTokens.cardBorder),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+      borderSide: const BorderSide(color: AppTokens.emerald500, width: 1.5),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('Registrácia'),
-        backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: AppTokens.tealGradient)),
+        elevation: 0,
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(20),
-        child: ListView(
-          children: [
-            const SizedBox(height: 20),
-            const Text(
-              'Vytvorte si účet 🌱',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text('Zaregistrujte sa a začnite svoju botanickú cestu.'),
-            const SizedBox(height: 30),
+        children: [
+          const Text('Vytvorte si účet', style: AppTokens.h1),
+          const SizedBox(height: 6),
+          const Text('Zaregistrujte sa a začnite svoju botanickú cestu.', style: AppTokens.body),
+          const SizedBox(height: 20),
 
-            _input('Meno', nameCtrl),
-            _input('E-mail', emailCtrl),
-            _input('Heslo', passCtrl, isPassword: true),
-            _input('Potvrdiť heslo', confirmCtrl, isPassword: true),
-
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white, // 👈 doplnené
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          // Form card
+          NeonCard(
+            color: AppTokens.cardDark,
+            shadows: AppTokens.tileShadow,
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  style: const TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec('Meno'),
                 ),
-                child: const Text('Zaregistrovať sa', style: TextStyle(fontSize: 16)),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: emailCtrl,
+                  style: const TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec('E-mail'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passCtrl,
+                  obscureText: true,
+                  style: const TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec('Heslo'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: confirmCtrl,
+                  obscureText: true,
+                  style: const TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec('Potvrdiť heslo'),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTokens.emerald500,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                ),
+              ),
+              child: const Text('Zaregistrovať sa', style: TextStyle(fontSize: 16)),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+          Center(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+              },
+              child: const Text.rich(
+                TextSpan(
+                  text: 'Už ste zaregistrovaný? ',
+                  style: TextStyle(color: AppTokens.textPrimary, fontSize: 14),
+                  children: [
+                    TextSpan(
+                      text: 'Prihláste sa',
+                      style: TextStyle(color: AppTokens.emerald500, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _input(String label, TextEditingController ctrl, {bool isPassword = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextField(
-        controller: ctrl,
-        obscureText: isPassword,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

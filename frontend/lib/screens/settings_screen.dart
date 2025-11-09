@@ -1,53 +1,42 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
-import '../utils/theme_manager.dart'; // ✅ import
+import '../theme/tokens.dart';
+import '../widgets/neon.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  @override
   Widget build(BuildContext context) {
-    bool isDark = ThemeManager.isDarkMode();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nastavenia'),
         foregroundColor: Colors.white,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          decoration: BoxDecoration(gradient: AppTokens.tealGradient),
         ),
+        elevation: 0,
       ),
-      body: ListView(
+      body: Padding(
         padding: const EdgeInsets.all(20),
-        children: [
-          SwitchListTile(
-            title: const Text('Tmavý režim'),
-            subtitle: const Text('Prepni medzi svetlým a tmavým motívom'),
-            activeColor: AppColors.primaryGreen,
-            value: isDark,
-            onChanged: (value) {
-              ThemeManager.toggleTheme(value);
-              setState(() {});
-            },
-          ),
-          const Divider(height: 30),
-          const ListTile(
-            leading: Icon(Icons.notifications_outlined, color: AppColors.primaryGreen),
-            title: Text('Upozornenia'),
-            subtitle: Text('Správa notifikácií bude dostupná čoskoro'),
-          ),
-        ],
+        child: Column(
+          children: const [
+            NeonCard(
+              color: AppTokens.cardDark,
+              shadows: AppTokens.tileShadow,
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                leading: Icon(Icons.notifications_outlined, color: AppTokens.emerald500),
+                title: Text('Upozornenia', style: AppTokens.h1),
+                subtitle: Text(
+                  'Správa notifikácií bude dostupná čoskoro',
+                  style: AppTokens.body,
+                ),
+                trailing: Icon(Icons.chevron_right, color: AppTokens.textSecondary),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
