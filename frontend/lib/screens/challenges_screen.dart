@@ -20,7 +20,7 @@ class ChallengesScreen extends StatelessWidget {
           // 🏆 Total Points – teal gradient NeonCard
           NeonCard(
             gradient: AppTokens.tealGradient,
-            shadows: AppTokens.glow(AppTokens.teal400, blur: 18),
+            shadows: AppTokens.glow(AppTokens.green400, blur: 18),
             radius: AppTokens.radiusMd,
             padding: const EdgeInsets.all(18),
             child: Row(

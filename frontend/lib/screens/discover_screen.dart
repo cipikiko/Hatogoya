@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
+import '../qr/qr.dart'; // QR skener + handler
 
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
@@ -40,14 +41,14 @@ class DiscoverScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // 🌿 Scan Button (neon tyrkys)
+          // 🌿 Scan Button (otvorí dialóg)
           GestureDetector(
             onTap: () {
               showDialog(context: context, builder: (context) => const ScanPlantDialog());
             },
             child: NeonCard(
               gradient: AppTokens.tealGradient,
-              shadows: AppTokens.glow(AppTokens.teal400, blur: 18),
+              shadows: AppTokens.glow(AppTokens.green400, blur: 18),
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               radius: AppTokens.radiusMd,
               child: const Row(
@@ -62,7 +63,7 @@ class DiscoverScreen extends StatelessWidget {
                         Text('Scan a Plant', style: AppTokens.titleWhite),
                         SizedBox(height: 2),
                         Text('Use your camera to identify plants',
-                            style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            style: TextStyle(color: Colors.white70, fontSize: 14)),
                       ],
                     ),
                   ),
@@ -73,7 +74,7 @@ class DiscoverScreen extends StatelessWidget {
 
           const SizedBox(height: 25),
 
-          // 📊 Collection Progress (dark card + gradient progress)
+          // 📊 Collection Progress
           NeonCard(
             color: AppTokens.cardDark,
             shadows: AppTokens.tileShadow,
@@ -109,30 +110,30 @@ class DiscoverScreen extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
           const SizedBox(height: 10),
 
-          // 🪴 Rastliny (bez obrázkov)
-          const PlantCard(
+          // 🪴 Rastliny – bez const (inak „Not a constant expression“)
+          PlantCard(
             name: 'Monstera Deliciosa',
             subtitle: 'Monstera deliciosa',
             rarity: 'Common',
             zone: 'Tropical Zone A',
-            tagColor: Color(0xFFA5D6A7),
+            tagColor: const Color(0xFFA5D6A7),
           ),
-          const PlantCard(
+          PlantCard(
             name: 'Succulent Collection',
             subtitle: 'Various species',
             rarity: 'Uncommon',
             zone: 'Desert Garden',
-            tagColor: Color(0xFF81D4FA),
+            tagColor: const Color(0xFF81D4FA),
           ),
-          const PlantCard(
+          PlantCard(
             name: 'Garden Flowers',
             subtitle: 'Mixed varieties',
             rarity: 'Common',
             zone: 'Rose Garden',
-            tagColor: Color(0xFFA5D6A7),
+            tagColor: const Color(0xFFA5D6A7),
           ),
-          const PlantLockedCard(rarity: 'Rare', color: Color(0xFFCE93D8)),
-          const PlantLockedCard(rarity: 'Epic', color: Color(0xFFFFCC80)),
+          PlantLockedCard(rarity: 'Rare', color: const Color(0xFFCE93D8)),
+          PlantLockedCard(rarity: 'Epic', color: const Color(0xFFFFCC80)),
         ],
       ),
     );
@@ -198,8 +199,8 @@ class PlantCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: tagColor.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(8),
+                        // pre kompatibilitu použijeme withOpacity
+                        color: Colors.white.withValues(alpha: 0.22),                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         rarity,
@@ -280,7 +281,16 @@ class PlantLockedCard extends StatelessWidget {
   }
 }
 
-// 📸 Dialog pre skenovanie (temný panel + neon prvky)
+// 🌈 Pomocná funkcia na stmavenie farby
+extension ColorShade on Color {
+  Color darken([double amount = .1]) {
+    assert(amount >= 0 && amount <= 1);
+    final hsl = HSLColor.fromColor(this);
+    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
+    return hslDark.toColor();
+  }
+}
+
 class ScanPlantDialog extends StatelessWidget {
   const ScanPlantDialog({super.key});
 
@@ -333,7 +343,6 @@ class ScanPlantDialog extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // CTA buttons
                 Column(
                   children: [
                     SizedBox(
@@ -343,7 +352,7 @@ class ScanPlantDialog extends StatelessWidget {
                         icon: const Icon(Icons.camera_alt_outlined),
                         label: const Text('Scan Plant (Camera)'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTokens.teal600,
+                          backgroundColor: AppTokens.green600,
                           foregroundColor: Colors.white,
                           minimumSize: const Size(double.infinity, 48),
                           shape: RoundedRectangleBorder(
@@ -361,7 +370,7 @@ class ScanPlantDialog extends StatelessWidget {
                         label: const Text('Upload Photo'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTokens.textPrimary,
-                          side: const BorderSide(color: AppTokens.teal600),
+                          side: const BorderSide(color: AppTokens.green600),
                           minimumSize: const Size(double.infinity, 48),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppTokens.radiusSm),
@@ -370,15 +379,27 @@ class ScanPlantDialog extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
+
+                    // FUNKČNÉ tlačidlo pre QR
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          final nav = Navigator.of(context);
+                          nav.pop(); // zavri dialóg
+                          nav.push(
+                            MaterialPageRoute(
+                              builder: (ctx) => ScannerPage(
+                                onScan: (code) => handleScan(ctx, code),
+                              ),
+                            ),
+                          );
+                        },
                         icon: const Icon(Icons.qr_code_scanner),
                         label: const Text('Scan QR Code'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTokens.textPrimary,
-                          side: const BorderSide(color: AppTokens.teal600),
+                          side: const BorderSide(color: AppTokens.green600),
                           minimumSize: const Size(double.infinity, 48),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppTokens.radiusSm),
@@ -417,15 +438,5 @@ class ScanPlantDialog extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-// 🌈 Pomocná funkcia na stmavenie farby
-extension ColorShade on Color {
-  Color darken([double amount = .1]) {
-    assert(amount >= 0 && amount <= 1);
-    final hsl = HSLColor.fromColor(this);
-    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
-    return hslDark.toColor();
   }
 }

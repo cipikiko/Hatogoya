@@ -7,17 +7,26 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double topPad = MediaQuery.of(context).padding.top;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: EdgeInsets.only(top: topPad, bottom: 24), // bez bočných okrajov hore
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ========= Level Card =========
+          // ========= Level Card – edge to edge, prilepená na status bar =========
           PulseGlow(
-            color: AppTokens.teal400,
-            child: NeonCard(
-              gradient: AppTokens.tealGradient,
-              shadows: AppTokens.glow(AppTokens.teal400, blur: 18),
+            color: AppTokens.green400,
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: AppTokens.tealGradient,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
               child: Column(
                 children: [
                   Row(
@@ -60,124 +69,142 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 22),
+          const SizedBox(height: 26),
 
           // ========= Stat Tiles =========
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              _StatTile(
-                gradient: AppTokens.statOrange,
-                shadowSeed: AppTokens.orange,
-                icon: Icons.local_fire_department,
-                number: '12',
-                label: 'Day Streak',
-                numberColor: Color(0xFFFFEDD5),
-                labelColor: Color(0xFFFFD2A1),
-              ),
-              _StatTile(
-                gradient: AppTokens.statGreen,
-                shadowSeed: AppTokens.emerald500,
-                icon: Icons.eco,
-                number: '47',
-                label: 'Plants',
-                numberColor: Color(0xFFCCFBE6),
-                labelColor: AppTokens.textSecondary,
-              ),
-              _StatTile(
-                gradient: AppTokens.statPurple,
-                shadowSeed: AppTokens.purple,
-                icon: Icons.workspace_premium_rounded,
-                number: '23',
-                label: 'Badges',
-                numberColor: Color(0xFFEDE9FE),
-                labelColor: Color(0xFFD8B4FE),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 22),
-
-          // ========= Daily Quest =========
-          NeonCard(
-            color: AppTokens.cardDark,
-            shadows: AppTokens.tileShadow,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
-                _RowTitle(), // "Daily Quest" + XP chip
-                SizedBox(height: 8),
-                Text('Discover 3 New Plants', style: AppTokens.body),
-                SizedBox(height: 12),
-                Text('Progress', style: TextStyle(color: AppTokens.textSecondary, fontSize: 12)),
-                SizedBox(height: 6),
-                GradientProgressBar(value: 1 / 3),
+                _StatTile(
+                  gradient: AppTokens.statOrange,
+                  shadowSeed: AppTokens.orange,
+                  icon: Icons.local_fire_department,
+                  number: '12',
+                  label: 'Day Streak',
+                  numberColor: AppTokens.textPrimary,
+                  labelColor: AppTokens.textSecondary,
+                ),
+                _StatTile(
+                  gradient: AppTokens.statGreen,
+                  shadowSeed: AppTokens.emerald500,
+                  icon: Icons.eco,
+                  number: '47',
+                  label: 'Plants',
+                  numberColor: AppTokens.textPrimary,
+                  labelColor: AppTokens.textSecondary,
+                ),
+                _StatTile(
+                  gradient: AppTokens.statPurple,
+                  shadowSeed: AppTokens.purple,
+                  icon: Icons.workspace_premium_rounded,
+                  number: '23',
+                  label: 'Badges',
+                  numberColor: AppTokens.textPrimary,
+                  labelColor: AppTokens.textSecondary,
+                ),
               ],
             ),
           ),
 
           const SizedBox(height: 22),
 
-          // ========= Recent Achievements =========
-          const _SectionTitle(title: 'Recent Achievements'),
-          const SizedBox(height: 10),
-
-          const _AchievementCard(
-            title: 'Early Bird',
-            subtitle: 'Unlocked today',
-            colorBlob: LinearGradient(
-              colors: [Color(0xFFFFA94D), Color(0xFFFF6B6B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            icon: Icons.wb_sunny_outlined,
-          ),
-          const SizedBox(height: 12),
-          const _AchievementCard(
-            title: 'Plant Expert',
-            subtitle: 'Unlocked today',
-            colorBlob: LinearGradient(
-              colors: [Color(0xFF34D399), Color(0xFF14B8A6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            icon: Icons.grass_rounded,
-          ),
-          const SizedBox(height: 12),
-          const _AchievementCard(
-            title: 'Week Warrior',
-            subtitle: 'Unlocked today',
-            colorBlob: LinearGradient(
-              colors: [Color(0xFFFDE68A), Color(0xFFF59E0B)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            icon: Icons.flash_on_outlined,
-          ),
-
-          const SizedBox(height: 12),
-
-          // ========= Explore the Garden =========
-          GestureDetector(
-            onTap: () {
-              showDialog(context: context, builder: (_) => const GardenMapDialog());
-            },
+          // ========= Daily Quest =========
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: NeonCard(
-              gradient: AppTokens.tealGradient,
-              shadows: AppTokens.glow(AppTokens.teal600, blur: 14),
-              padding: const EdgeInsets.all(18),
-              child: Row(
+              color: AppTokens.cardDark,
+              shadows: AppTokens.tileShadow,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Icon(Icons.location_on_outlined, color: Colors.white, size: 28),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text('Explore the Garden', style: AppTokens.titleWhite),
-                  ),
+                  _RowTitle(),
+                  SizedBox(height: 8),
+                  Text('Discover 3 New Plants', style: AppTokens.body),
+                  SizedBox(height: 12),
+                  Text('Progress', style: TextStyle(color: AppTokens.textSecondary, fontSize: 12)),
+                  SizedBox(height: 6),
+                  GradientProgressBar(value: 1 / 3),
                 ],
               ),
             ),
           ),
 
+          const SizedBox(height: 22),
+
+          // ========= Recent Achievements =========
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: _SectionTitle(title: 'Recent Achievements'),
+          ),
+          const SizedBox(height: 10),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                _AchievementCard(
+                  title: 'Early Bird',
+                  subtitle: 'Unlocked today',
+                  colorBlob: LinearGradient(
+                    colors: [Color(0xFFFFA94D), Color(0xFFFF6B6B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  icon: Icons.wb_sunny_outlined,
+                ),
+                SizedBox(height: 12),
+                _AchievementCard(
+                  title: 'Plant Expert',
+                  subtitle: 'Unlocked today',
+                  colorBlob: LinearGradient(
+                    colors: [Color(0xFF34D399), Color(0xFF14B8A6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  icon: Icons.grass_rounded,
+                ),
+                SizedBox(height: 12),
+                _AchievementCard(
+                  title: 'Week Warrior',
+                  subtitle: 'Unlocked today',
+                  colorBlob: LinearGradient(
+                    colors: [Color(0xFFFDE68A), Color(0xFFF59E0B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  icon: Icons.flash_on_outlined,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // ========= Explore the Garden =========
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: GestureDetector(
+              onTap: () {
+                showDialog(context: context, builder: (_) => const GardenMapDialog());
+              },
+              child: NeonCard(
+                gradient: AppTokens.tealGradient,
+                shadows: AppTokens.glow(AppTokens.green600, blur: 14),
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: const [
+                    Icon(Icons.location_on_outlined, color: Colors.white, size: 28),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text('Explore the Garden', style: AppTokens.titleWhite),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -194,11 +221,10 @@ class _LevelInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(children: [
-          Text('Level 8', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+          Text('Level 8', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
           SizedBox(width: 6),
-
         ]),
-        Text('Plant Explorer', style: AppTokens.titleWhite),
+        Text('Plant Explorer', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -253,7 +279,6 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-
 class _AchievementCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -265,7 +290,6 @@ class _AchievementCard extends StatelessWidget {
     required this.subtitle,
     required this.colorBlob,
     required this.icon,
-
   });
 
   @override
@@ -355,7 +379,6 @@ class _StatTile extends StatelessWidget {
           Text(number, style: TextStyle(color: numberColor, fontWeight: FontWeight.w700, fontSize: 18)),
           Text(label, style: TextStyle(color: labelColor, fontSize: 12)),
           const SizedBox(height: 0),
-
         ],
       ),
     );
@@ -402,7 +425,7 @@ class GardenMapDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                     border: Border.all(color: AppTokens.emerald500, width: 1),
                   ),
-                  child: const Center(child: Icon(Icons.map_outlined, size: 84, color: AppTokens.teal600)),
+                  child: const Center(child: Icon(Icons.map_outlined, size: 84, color: AppTokens.green600)),
                 ),
                 const SizedBox(height: 12),
                 Container(
@@ -414,7 +437,7 @@ class GardenMapDialog extends StatelessWidget {
                   ),
                   child: Row(
                     children: const [
-                      Icon(Icons.touch_app_outlined, color: AppTokens.teal600, size: 18),
+                      Icon(Icons.touch_app_outlined, color: AppTokens.green600, size: 18),
                       SizedBox(width: 6),
                       Expanded(
                         child: Text('Tap a location to view details',
@@ -443,8 +466,8 @@ class GardenMapDialog extends StatelessWidget {
                       icon: const Icon(Icons.arrow_back),
                       label: const Text('Back'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTokens.teal600,
-                        side: const BorderSide(color: AppTokens.teal600),
+                        foregroundColor: AppTokens.green600,
+                        side: const BorderSide(color: AppTokens.green600),
                       ),
                     ),
                     const Spacer(),
@@ -453,7 +476,7 @@ class GardenMapDialog extends StatelessWidget {
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('Start Tour'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTokens.teal600,
+                        backgroundColor: AppTokens.green600,
                         foregroundColor: Colors.white,
                       ),
                     ),

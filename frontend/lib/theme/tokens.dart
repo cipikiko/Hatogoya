@@ -1,74 +1,85 @@
 import 'package:flutter/material.dart';
 
-/// Centrálne design tokens pre celú appku (tmavý teal/emerald neon).
+/// Svetlá botanická téma: F1F7ED (canvas), 243E36 (dark green), 7CA982 (mid green)
 class AppTokens {
-  /* ================= Colors ================= */
+  /* ============ Base Palette ============ */
+  static const Color canvasLight = Color(0xFFF1F7ED); // pozadie
+  static const Color greenDark   = Color(0xFF243E36); // tmavozelená (text/akcent)
+  static const Color greenMid    = Color(0xFF7CA982); // hlavná zelená
 
-  // Základné pozadia
-  static const Color pageBg          = Color(0xFF0B0F0C); // celostránkové pozadie
-  static const Color headerBg        = Color(0xFF0E1613); // pozadie top pásu
-  static const Color headerSeparator = Color(0xFF1F2A25); // deliaca línia pod headerom
+  /* ============ Colors ============ */
+  // Pozadia
+  static const Color pageBg          = canvasLight;
+  static const Color headerBg        = canvasLight;
+  static const Color headerSeparator = Color(0xFFD5E8DC); // jemná línia
 
-  // Karty / okraje
-  static const Color cardDark   = Color(0xFF151A15);
-  static const Color cardBorder = Color(0xFF1E3A2A);
+  // Karty a okraje (svetlý povrch)
+  static const Color cardSurface = Colors.white;
+  static const Color cardDark    = cardSurface;
+  static const Color cardBorder  = Color(0xFFC8DACF);
 
-  // Navigácia dole
-  static const Color navBg         = Color(0xFF121814);
-  static const Color navBorder     = Color(0xFF1E3A2A);
-  static const Color navUnselected = Color(0xFF6B7280);
+  // Navigácia dole (svetlá)
+  static const Color navBg         = Colors.white;
+  static const Color navBorder     = Color(0xFFCADFD3);
+  static const Color navUnselected = Color(0xFF7B8A84);
 
-  // Minor UI prvky v sheet-e
-  static const Color handle  = Color(0xFF3B4A42); // drag handle
-  static const Color divider = Color(0xFF2A3A33);
+  // Minor UI prvky
+  static const Color handle  = Color(0xFFCADFD3);
+  static const Color divider = Color(0xFFE3F0E9);
 
-  // Brand – teal/emerald
-  static const Color teal600     = Color(0xFF0D9488);
-  static const Color teal400     = Color(0xFF14B8A6);
-  static const Color emerald500  = Color(0xFF10B981);
-  static const Color cyan400     = Color(0xFF06B6D4);
+  // Brand – zelená paleta
+  static const Color emerald500 = greenMid;          // primár
+  static const Color green600   = Color(0xFF6A9474);
+  static const Color green700   = greenDark;
+  static const Color green400   = Color(0xFF9BC49F);
 
   // Texty
-  static const Color textPrimary   = Color(0xFFE8F5E9);
-  static const Color textSecondary = Color(0xFFA7F3D0);
+  static const Color textPrimary   = greenDark;
+  static const Color textSecondary = Color(0xFF4E6B60);
 
-  // Akcenty (XP, ikony)
+  // Akcenty
   static const Color xpYellow  = Color(0xFFFACC15);
   static const Color xpYellow2 = Color(0xFFFBBF24);
-  static const Color orange    = Color(0xFFFF6B1A);
+  static const Color orange    = Color(0xFFFF7A1F);
   static const Color purple    = Color(0xFF8B5CF6);
 
-  /* ================= Gradients ================= */
-
-  // Hlavný tyrkysový gradient (header, CTA, Explore)
+  /* ============ Gradients ============ */
+  // Kompat názov (niekde ho voláš) – už s novými farbami
   static const LinearGradient tealGradient = LinearGradient(
-    colors: [teal600, teal400],
+    colors: [greenMid, green400],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  // Panel (bottom-sheet) – veľmi tmavý teal/emerald
+  // Preferovaný názov
+  static const LinearGradient headerGradient = LinearGradient(
+    colors: [greenMid, green400],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Panel (bottom sheet) jemný svetlý
   static LinearGradient panelGradient() => const LinearGradient(
-    colors: [Color(0xFF0E1613), Color(0xFF0B1411)],
+    colors: [Colors.white, Color(0xFFF4FBF7)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  // Progress bar (emerald → cyan)
+  // Progress bar – od tmavšej k svetlej
   static const LinearGradient progressGradient = LinearGradient(
-    colors: [emerald500, cyan400],
+    colors: [green600, green400],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
-  // Stat tile akcenty
+  // Stat tile akcenty (ponechané)
   static LinearGradient statOrange() => const LinearGradient(
-    colors: [Color(0xFFFF8A3A), Color(0xFFFF4B2B)],
+    colors: [Color(0xFFFFA94D), Color(0xFFFF6B6B)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
   static LinearGradient statGreen() => const LinearGradient(
-    colors: [Color(0xFF34D399), Color(0xFF10B981)],
+    colors: [green400, green600],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -78,49 +89,36 @@ class AppTokens {
     end: Alignment.bottomRight,
   );
 
-  /* ================= Shadows ================= */
-
-  // Univerzálne žiarenie (neon glow)
-  static List<BoxShadow> glow(Color seed, {double blur = 18, double y = 6, double alpha = .28}) => [
-    BoxShadow(
-      color: seed.withValues(alpha: alpha), // vyhýba sa deprecated withOpacity
-      blurRadius: blur,
-      offset: Offset(0, y),
-    ),
+  /* ============ Shadows ============ */
+  static List<BoxShadow> glow(Color seed, {double blur = 10, double y = 4, double alpha = .12}) => [
+    BoxShadow(color: seed.withValues(alpha: alpha), blurRadius: blur, offset: Offset(0, y)),
   ];
-
-  // Jemný tieň pod kachličkou / blobom
   static const List<BoxShadow> tileShadow = [
-    BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 6)),
+    BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 5)),
   ];
 
-  /* ================= Radii ================= */
-
-  static const double radiusLg = 22;
-  static const double radiusMd = 18;
+  /* ============ Radii ============ */
+  static const double radiusLg = 20;
+  static const double radiusMd = 16;
   static const double radiusSm = 12;
 
-  /* ================= Typography ================= */
-
+  /* ============ Typography ============ */
   static const TextStyle h1 = TextStyle(
     color: textPrimary,
     fontSize: 16,
     fontWeight: FontWeight.w600,
   );
-
   static const TextStyle body = TextStyle(
     color: textSecondary,
     fontSize: 14,
   );
-
   static const TextStyle titleWhite = TextStyle(
     color: Colors.white,
     fontWeight: FontWeight.w600,
-    fontSize: 16,
+    fontSize: 18,
   );
 
-  /* ================= Durations ================= */
-
+  /* ============ Durations ============ */
   static const Duration dPulse  = Duration(milliseconds: 1600);
   static const Duration dBounce = Duration(milliseconds: 2000);
 }

@@ -26,10 +26,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           // Header (gradient + progress)
           PulseGlow(
-            color: AppTokens.teal400,
+            color: AppTokens.green400,
             child: NeonCard(
-              gradient: AppTokens.tealGradient,
-              shadows: AppTokens.glow(AppTokens.teal400, blur: 18),
+              gradient: AppTokens.headerGradient,
+              shadows: AppTokens.glow(AppTokens.green400, blur: 18),
               padding: const EdgeInsets.all(18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: _openSubmitPlantDialog,
             child: NeonCard(
               color: AppTokens.cardDark,
-              shadows: AppTokens.glow(AppTokens.teal400, blur: 12),
+              shadows: AppTokens.glow(AppTokens.green400, blur: 12),
               radius: AppTokens.radiusMd,
               padding: const EdgeInsets.all(14),
               child: Row(
@@ -208,7 +208,7 @@ class _StatBox extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: AppTokens.tealGradient,
                 borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                boxShadow: AppTokens.glow(AppTokens.teal400, blur: 10),
+                boxShadow: AppTokens.glow(AppTokens.green400, blur: 10),
               ),
               child: Center(child: Icon(icon, color: Colors.white, size: 22)),
             ),
@@ -263,7 +263,7 @@ class _AchievementIcon extends StatelessWidget {
               color: iconBg,
               borderRadius: BorderRadius.circular(AppTokens.radiusSm),
               border: Border.all(color: locked ? AppTokens.cardBorder : Colors.transparent),
-              boxShadow: locked ? [] : AppTokens.glow(AppTokens.teal400, blur: 10),
+              boxShadow: locked ? [] : AppTokens.glow(AppTokens.green400, blur: 10),
             ),
             child: Icon(icon, color: iconColor, size: 26),
           ),
@@ -433,7 +433,7 @@ class SubmitPlantDialog extends StatelessWidget {
                         icon: const Icon(Icons.upload, size: 18),
                         label: const Text('Submit Plant'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTokens.teal600,
+                          backgroundColor: AppTokens.green600,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppTokens.radiusSm),

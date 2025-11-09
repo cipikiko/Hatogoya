@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/discover_screen.dart';
-import 'screens/plants_screen.dart';
 import 'screens/challenges_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
@@ -27,16 +26,16 @@ class BotanikApp extends StatelessWidget {
       title: 'Botanik',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.dark,
+        brightness: Brightness.light,
         scaffoldBackgroundColor: AppTokens.pageBg,
         appBarTheme: const AppBarTheme(
           backgroundColor: AppTokens.headerBg,
-          foregroundColor: Colors.white,
+          foregroundColor: AppTokens.greenDark,
           elevation: 0,
         ),
-        colorScheme: const ColorScheme.dark(
+        colorScheme: const ColorScheme.light(
           primary: AppTokens.emerald500,
-          secondary: AppTokens.teal600,
+          secondary: AppTokens.green600,
         ),
         useMaterial3: true,
       ),
@@ -72,7 +71,6 @@ class _MainScreenState extends State<MainScreen> {
     }
     setState(() {
       _selectedIndex = index;
-      // pri prepnutí tabu zavri prípadné vnútorné pushed stránky
       _shellNavKey.currentState?.popUntil((r) => r.isFirst);
     });
   }
@@ -106,7 +104,7 @@ class _MainScreenState extends State<MainScreen> {
                 top: Radius.circular(AppTokens.radiusLg),
               ),
               border: Border.all(color: AppTokens.cardBorder, width: 1),
-              boxShadow: AppTokens.glow(AppTokens.teal400, blur: 22),
+              boxShadow: AppTokens.glow(AppTokens.green400, blur: 18, alpha: .14),
             ),
             child: SafeArea(
               top: false,
@@ -174,6 +172,21 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  // jednotný item pre PNG ikony v bare
+  BottomNavigationBarItem _pngItem(String asset) => BottomNavigationBarItem(
+    icon: SizedBox(
+      width: 26,
+      height: 26,
+      child: Image.asset(asset, fit: BoxFit.contain),
+    ),
+    activeIcon: SizedBox(
+      width: 28,
+      height: 28,
+      child: Image.asset(asset, fit: BoxFit.contain),
+    ),
+    label: '',
+  );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -197,14 +210,15 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
 
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.only(top: 6, bottom: 10),
-        decoration: const BoxDecoration(
-          color: AppTokens.navBg,
-          border: Border(top: BorderSide(color: AppTokens.navBorder, width: 1)),
-        ),
-        child: SizedBox(
-          height: 70,
+      // spodná navigácia – bezpečná voči overflow vďaka SafeArea a bez fixnej výšky
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: AppTokens.navBg,
+            border: Border(top: BorderSide(color: AppTokens.navBorder, width: 1)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           child: BottomNavigationBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -215,28 +229,14 @@ class _MainScreenState extends State<MainScreen> {
             showUnselectedLabels: false,
             type: BottomNavigationBarType.fixed,
             onTap: _onItemTapped,
+            selectedIconTheme: const IconThemeData(size: 28),
+            unselectedIconTheme: const IconThemeData(size: 26),
             items: [
-              BottomNavigationBarItem(
-                icon: Image.asset('lib/utils/images/home.png', height: 28),
-                label: '',
-              ),
-              BottomNavigationBarItem(
-                icon: Image.asset('lib/utils/images/loupe.png', height: 28),
-                label: '',
-              ),
-              BottomNavigationBarItem(
-                icon: Image.asset('lib/utils/images/plant.png', height: 28),
-                label: '',
-              ),
-              BottomNavigationBarItem(
-                icon: Image.asset('lib/utils/images/trophy.png', height: 28),
-                label: '',
-              ),
-              // spúšťač menu
-              BottomNavigationBarItem(
-                icon: Image.asset('lib/utils/images/filter.png', height: 28),
-                label: '',
-              ),
+              _pngItem('lib/utils/images/home.png'),
+              _pngItem('lib/utils/images/loupe.png'),
+              _pngItem('lib/utils/images/plant.png'),
+              _pngItem('lib/utils/images/trophy.png'),
+              _pngItem('lib/utils/images/filter.png'), // spúšťač menu
             ],
           ),
         ),
@@ -244,6 +244,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
+
 /// položka v bottom-sheet menu – o trochu väčšie bubliny, rozostupy zostanú vzdušné
 class _MenuTile extends StatelessWidget {
   final String label;
@@ -253,27 +254,26 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return NeonCard(
-      color: AppTokens.cardDark,
+      color: AppTokens.cardSurface,
       shadows: AppTokens.tileShadow,
-      radius: AppTokens.radiusMd,                                   // o chlp väčší radius
+      radius: AppTokens.radiusMd,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-      margin: const EdgeInsets.symmetric(vertical: 8),              // mierne väčší rozostup
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         dense: true,
         visualDensity: const VisualDensity(vertical: -1, horizontal: -1),
         contentPadding: const EdgeInsets.symmetric(horizontal: 10),
         title: Text(
           label,
-          style: const TextStyle(fontSize: 15, color: AppTokens.textPrimary), // o trochu väčšie písmo
+          style: const TextStyle(fontSize: 15, color: AppTokens.textPrimary),
         ),
         trailing: const Icon(
           Icons.chevron_right,
           color: AppTokens.textSecondary,
-          size: 20,                                                  // o trochu väčšia šípka
+          size: 20,
         ),
         onTap: onTap,
       ),
     );
   }
 }
-
