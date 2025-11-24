@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "HatogoyaDB",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "botanika",
+      "Username": "jakub",
+      "SSLMode": "disable",
+      "PassFile": "/pgadmin4/passfile"
+    }
+  }
+}

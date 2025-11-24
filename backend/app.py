@@ -20,7 +20,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{db_user}:{db_password}@{
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-
+with app.app_context():
+    db.create_all()
 # Register blueprints
 app.register_blueprint(register_bp)
 app.register_blueprint(login_bp)
@@ -36,4 +37,4 @@ except Exception as e:
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")

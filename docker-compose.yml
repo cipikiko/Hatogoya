@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./backend
+    container_name: hatogoya-backend
+    ports:
+      - "5000:5000"
+    environment:
+      DB_USERNAME: jakub
+      DB_PASSWORD: superheslo
+      DB_NAME: botanika
+      DB_HOST: postgres
+      DB_PORT: 5432
+      SECRET_KEY: supersecret
+    depends_on:
+      - postgres
+    networks:
+      - hatogoya-net
+
+  postgres:
+    image: postgres:15
+    container_name: hatogoya-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: jakub
+      POSTGRES_PASSWORD: superheslo
+      POSTGRES_DB: botanika
+    ports:
+      - "5432:5432"
+    volumes:
+      - hatogoya-db:/var/lib/postgresql/data
+    networks:
+      - hatogoya-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: hatogoya-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - ./pgadmin/servers.json:/pgadmin4/servers.json
+      - ./pgadmin/passfile:/pgadmin4/passfile
+    networks:
+      - hatogoya-net
+
+networks:
+  hatogoya-net:
+
+volumes:
+  hatogoya-db:
