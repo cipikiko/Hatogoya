@@ -1,0 +1,139 @@
+###############################################
+#               PYTHON BACKEND
+###############################################
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.tmp
+*.sqlite
+*.db
+
+# Virtual env
+.venv/
+venv/
+env/
+ENV/
+*.env
+
+# Pip files
+pip-wheel-metadata/
+pip-log.txt
+
+###############################################
+#               FLUTTER / DART
+###############################################
+
+# Flutter and Dart
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Build output
+build/
+**/build/
+
+# Generated files
+*.flutter-plugins
+*.flutter-plugins-dependencies
+
+###############################################
+#               ANDROID
+###############################################
+
+android/.gradle/
+android/local.properties
+android/app/build/
+android/.idea/
+*.iml
+
+###############################################
+#               iOS
+###############################################
+
+ios/Pods/
+ios/build/
+ios/.symlinks/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+
+###############################################
+#               AI / MODELS
+###############################################
+
+# Large models
+*.onnx
+*.h5
+*.pt
+*.pth
+
+# Datasets
+*.csv
+*.npy
+*.pkl
+*.joblib
+*.pickle
+
+ai/data/
+ai/models/
+!ai/models/classes.txt   # allow only classes.txt
+
+###############################################
+#                NODE / WEB
+###############################################
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+###############################################
+#                 IDE / EDITORS
+###############################################
+
+# VSCode
+.vscode/
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+.gradle/
+*.swp
+
+###############################################
+#                    OS
+###############################################
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+###############################################
+#                 DOCKER
+###############################################
+
+# Docker volumes
+docker/data/
+*/pgadmin/
+*/postgres/
+*/docker-data/
+
+###############################################
+#             OTHER COMMON FILES
+###############################################
+
+*.tmp
+*.bak
+*.old
+*.orig
+*.cache
+*.log

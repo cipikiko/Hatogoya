@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
+import '../services/api_service.dart';
+import 'home_screen.dart';
 import 'register_screen.dart';
-import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController emailCtrl = TextEditingController();
+  final TextEditingController usernameCtrl = TextEditingController();
   final TextEditingController passwordCtrl = TextEditingController();
 
   InputDecoration _dec(String label) => InputDecoration(
@@ -26,9 +27,44 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-      borderSide: const BorderSide(color: AppTokens.emerald500, width: 1.5),
+      borderSide:
+      const BorderSide(color: AppTokens.emerald500, width: 1.5),
     ),
   );
+
+  /// 🔥 LOGIN FUNKCIA – napojená na backend (/login)
+  void handleLogin() async {
+    final username = usernameCtrl.text.trim();
+    final password = passwordCtrl.text.trim();
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Vyplňte všetky polia")),
+      );
+      return;
+    }
+
+    final result = await ApiService.login(username, password);
+
+    if (result["status"] == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Prihlásenie úspešné")),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result["body"]["message"] ?? "Nesprávne meno alebo heslo",
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +72,9 @@ class _LoginScreenState extends State<LoginScreen> {
       appBar: AppBar(
         title: const Text('Prihlásenie'),
         foregroundColor: Colors.white,
-        flexibleSpace: Container(decoration: BoxDecoration(gradient: AppTokens.tealGradient)),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(gradient: AppTokens.tealGradient),
+        ),
         elevation: 0,
       ),
       body: ListView(
@@ -44,9 +82,13 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           const Text('Vitajte späť', style: AppTokens.h1),
           const SizedBox(height: 6),
-          const Text('Prihláste sa do svojho účtu a pokračujte v objavovaní!', style: AppTokens.body),
+          const Text(
+            'Prihláste sa a pokračujte v objavovaní botanickej záhrady.',
+            style: AppTokens.body,
+          ),
           const SizedBox(height: 20),
 
+          // Card
           NeonCard(
             color: AppTokens.cardDark,
             shadows: AppTokens.tileShadow,
@@ -54,9 +96,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 TextField(
-                  controller: emailCtrl,
+                  controller: usernameCtrl,
                   style: const TextStyle(color: AppTokens.textPrimary),
-                  decoration: _dec('E-mail'),
+                  decoration: _dec('Používateľské meno'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -69,11 +111,13 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
+
+          // Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: handleLogin,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTokens.emerald500,
                 foregroundColor: Colors.white,
@@ -82,40 +126,43 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                 ),
               ),
-              child: const Text('Prihlásiť sa', style: TextStyle(fontSize: 16)),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-          Center(
-            child: GestureDetector(
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
-              },
-              child: const Text('Zabudli ste heslo?', style: TextStyle(color: AppTokens.emerald500)),
+              child: const Text(
+                'Prihlásiť sa',
+                style: TextStyle(fontSize: 16),
+              ),
             ),
           ),
 
           const SizedBox(height: 18),
+
+          // Prechod na registráciu
           Center(
             child: GestureDetector(
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                );
               },
               child: const Text.rich(
                 TextSpan(
-                  text: 'Nie ste prihlásený? ',
-                  style: TextStyle(color: AppTokens.textPrimary),
+                  text: 'Nemáte účet? ',
+                  style: TextStyle(
+                      color: AppTokens.textPrimary, fontSize: 14),
                   children: [
                     TextSpan(
                       text: 'Zaregistrujte sa',
-                      style: TextStyle(color: AppTokens.emerald500, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: AppTokens.emerald500,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
           ),
+
           const SizedBox(height: 8),
         ],
       ),
