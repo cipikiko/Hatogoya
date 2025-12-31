@@ -13,24 +13,24 @@ class DiscoverScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Discover Plants', style: AppTokens.h1),
+           Text('Discover Plants', style: AppTokens.h1),
           const SizedBox(height: 4),
-          const Text('Explore and collect botanical species', style: AppTokens.body),
+           Text('Explore and collect botanical species', style: AppTokens.body),
           const SizedBox(height: 20),
 
           // 🔍 Search Bar
           TextField(
-            style: const TextStyle(color: AppTokens.textPrimary),
+            style:  TextStyle(color: AppTokens.textPrimary),
             decoration: InputDecoration(
               hintText: 'Search plants...',
-              hintStyle: const TextStyle(color: AppTokens.textSecondary),
-              prefixIcon: const Icon(Icons.search, color: AppTokens.textSecondary),
+              hintStyle:  TextStyle(color: AppTokens.textSecondary),
+              prefixIcon:  Icon(Icons.search, color: AppTokens.textSecondary),
               filled: true,
               fillColor: AppTokens.cardDark,
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                borderSide: const BorderSide(color: AppTokens.cardBorder),
+                borderSide:  BorderSide(color: AppTokens.cardBorder),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppTokens.radiusMd),
@@ -41,10 +41,17 @@ class DiscoverScreen extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // 🌿 Scan Button (otvorí dialóg)
+          // 🌿 Scan Button (otvorí QR scanner)
           GestureDetector(
             onTap: () {
-              showDialog(context: context, builder: (context) => const ScanPlantDialog());
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (ctx) => ScannerPage(
+                    onScan: (code) => handleScan(ctx, code),
+                  ),
+                ),
+              );
             },
             child: NeonCard(
               gradient: AppTokens.tealGradient,
@@ -72,6 +79,7 @@ class DiscoverScreen extends StatelessWidget {
             ),
           ),
 
+
           const SizedBox(height: 25),
 
           // 📊 Collection Progress
@@ -82,12 +90,12 @@ class DiscoverScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Your Collection',
+                 Text('Your Collection',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTokens.textPrimary)),
                 const SizedBox(height: 8),
                 const GradientProgressBar(value: 0.39, height: 8),
                 const SizedBox(height: 8),
-                const Row(
+                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('47 of 120 plants discovered',
@@ -106,7 +114,7 @@ class DiscoverScreen extends StatelessWidget {
 
           const SizedBox(height: 30),
 
-          const Text('Plant Collection',
+           Text('Last Collected',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
           const SizedBox(height: 10),
 
@@ -132,8 +140,7 @@ class DiscoverScreen extends StatelessWidget {
             zone: 'Rose Garden',
             tagColor: const Color(0xFFA5D6A7),
           ),
-          PlantLockedCard(rarity: 'Rare', color: const Color(0xFFCE93D8)),
-          PlantLockedCard(rarity: 'Epic', color: const Color(0xFFFFCC80)),
+
         ],
       ),
     );
@@ -176,7 +183,7 @@ class PlantCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppTokens.radiusSm),
               border: Border.all(color: AppTokens.cardBorder),
             ),
-            child: const Center(
+            child:  Center(
               child: Icon(Icons.eco, color: AppTokens.textSecondary, size: 22),
             ),
           ),
@@ -188,10 +195,10 @@ class PlantCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: const TextStyle(
+                    style:  TextStyle(
                         color: AppTokens.textPrimary, fontWeight: FontWeight.w600, fontSize: 15)),
                 Text(subtitle,
-                    style: const TextStyle(
+                    style:  TextStyle(
                         fontStyle: FontStyle.italic, color: AppTokens.textSecondary)),
                 const SizedBox(height: 6),
                 Row(
@@ -212,9 +219,9 @@ class PlantCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.location_on_outlined, size: 14, color: AppTokens.textSecondary),
+                     Icon(Icons.location_on_outlined, size: 14, color: AppTokens.textSecondary),
                     const SizedBox(width: 4),
-                    Text(zone, style: const TextStyle(fontSize: 12, color: AppTokens.textSecondary)),
+                    Text(zone, style:  TextStyle(fontSize: 12, color: AppTokens.textSecondary)),
                   ],
                 ),
               ],
@@ -246,9 +253,9 @@ class PlantLockedCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       child: Row(
         children: [
-          const Icon(Icons.lock_outline, size: 28, color: AppTokens.textSecondary),
+           Icon(Icons.lock_outline, size: 28, color: AppTokens.textSecondary),
           const SizedBox(width: 12),
-          const Expanded(
+           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -291,152 +298,4 @@ extension ColorShade on Color {
   }
 }
 
-class ScanPlantDialog extends StatelessWidget {
-  const ScanPlantDialog({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(20),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: AppTokens.panelGradient(),
-          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-          border: Border.all(color: AppTokens.cardBorder),
-          boxShadow: AppTokens.tileShadow,
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Scan a Plant',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppTokens.textPrimary,
-                    )),
-                const SizedBox(height: 6),
-                const Text(
-                  'Choose how you want to identify the plant',
-                  textAlign: TextAlign.center,
-                  style: AppTokens.body,
-                ),
-                const SizedBox(height: 16),
-
-                Container(
-                  height: 180,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: AppTokens.cardDark,
-                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                    border: const Border.fromBorderSide(BorderSide(color: AppTokens.cardBorder)),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.document_scanner_outlined,
-                        size: 48, color: AppTokens.textSecondary),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                Column(
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.camera_alt_outlined),
-                        label: const Text('Scan Plant (Camera)'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTokens.green600,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.upload_file_outlined),
-                        label: const Text('Upload Photo'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTokens.textPrimary,
-                          side: const BorderSide(color: AppTokens.green600),
-                          minimumSize: const Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-
-                    // FUNKČNÉ tlačidlo pre QR
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          final nav = Navigator.of(context);
-                          nav.pop(); // zavri dialóg
-                          nav.push(
-                            MaterialPageRoute(
-                              builder: (ctx) => ScannerPage(
-                                onScan: (code) => handleScan(ctx, code),
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.qr_code_scanner),
-                        label: const Text('Scan QR Code'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTokens.textPrimary,
-                          side: const BorderSide(color: AppTokens.green600),
-                          minimumSize: const Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTokens.cardDark,
-                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                    border: const Border.fromBorderSide(BorderSide(color: AppTokens.cardBorder)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.lightbulb_outline, color: Colors.amber, size: 20),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Tip: You can identify plants by taking a photo, uploading an image, or scanning a QR code in the garden.',
-                          style: AppTokens.body,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

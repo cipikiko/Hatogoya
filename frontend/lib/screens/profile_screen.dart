@@ -44,13 +44,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _HeaderTitle(),
                   ]),
                   const SizedBox(height: 12),
-                  const Text('Level 8',
-                      style: TextStyle(color: Colors.white70, fontSize: 14)),
+                  const Text(
+                    'Plants discovered',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
                   const SizedBox(height: 6),
                   const ClipRRect(
                     borderRadius: BorderRadius.all(Radius.circular(6)),
                     child: LinearProgressIndicator(
-                      value: 1720 / 2000,
+                      value: 47 / 120, // ✅ random: discovered / total
                       minHeight: 8,
                       backgroundColor: Colors.white24,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -59,8 +61,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 6),
                   const Align(
                     alignment: Alignment.centerRight,
-                    child: Text('1720 / 2000 XP',
-                        style: TextStyle(color: Colors.white, fontSize: 13)),
+                    child: Text(
+                      '47 / 120 plants',
+                      style: TextStyle(color: Colors.white, fontSize: 13),
+                    ),
                   ),
                 ],
               ),
@@ -80,39 +84,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              _StatBox(label: 'Badges Earned', value: '23', icon: Icons.star),
-              _StatBox(label: 'Current Streak', value: '12', icon: Icons.local_fire_department),
             ],
           ),
 
           const SizedBox(height: 28),
 
-          const Text('Achievements',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
-          const SizedBox(height: 10),
-
-          GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 24,
-            crossAxisSpacing: 10,
-            childAspectRatio: 0.9,
-            children: const [
-              _AchievementIcon(label: 'First Discovery', icon: Icons.spa,   color: Color(0xFFA5D6A7)),
-              _AchievementIcon(label: 'Plant Expert',    icon: Icons.eco,   color: Color(0xFF81C784)),
-              _AchievementIcon(label: 'Early Bird',      icon: Icons.wb_sunny_outlined, color: Color(0xFFFFF59D)),
-              _AchievementIcon(label: 'Week Warrior',    icon: Icons.flash_on,          color: Color(0xFFFFE082)),
-              _AchievementIcon(label: 'Photographer',    icon: Icons.camera_alt,        color: Color(0xFF90CAF9), locked: true),
-              _AchievementIcon(label: 'Collection Master', icon: Icons.collections_bookmark, color: Color(0xFFB39DDB), locked: true),
-              _AchievementIcon(label: 'Rare Hunter',     icon: Icons.search,            color: Color(0xFF80CBC4), locked: true),
-              _AchievementIcon(label: 'Garden Guardian', icon: Icons.shield_moon,       color: Color(0xFFB0BEC5), locked: true),
-            ],
-          ),
-
-          const SizedBox(height: 28),
-
-          const Text('Recent Activity',
+           Text('Recent Activity',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
           const SizedBox(height: 10),
 
@@ -141,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               radius: AppTokens.radiusMd,
               padding: const EdgeInsets.all(14),
               child: Row(
-                children: const [
+                children:  [
                   Icon(Icons.upload_rounded, color: AppTokens.emerald500),
                   SizedBox(width: 10),
                   Expanded(
@@ -215,7 +192,7 @@ class _StatBox extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               value,
-              style: const TextStyle(
+              style:  TextStyle(
                 color: AppTokens.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
@@ -223,7 +200,7 @@ class _StatBox extends StatelessWidget {
             ),
             Text(
               label,
-              style: const TextStyle(fontSize: 12, color: AppTokens.textSecondary),
+              style:  TextStyle(fontSize: 12, color: AppTokens.textSecondary),
             ),
           ],
         ),
@@ -319,9 +296,9 @@ class _ActivityCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title,
-                    style: const TextStyle(color: AppTokens.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
+                    style:  TextStyle(color: AppTokens.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
                 const SizedBox(height: 2),
-                Text(date, style: const TextStyle(color: AppTokens.textSecondary, fontSize: 12)),
+                Text(date, style:  TextStyle(color: AppTokens.textSecondary, fontSize: 12)),
               ],
             ),
           ),
@@ -362,10 +339,10 @@ class SubmitPlantDialog extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Submit a Plant',
+                   Text('Submit a Plant',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
                   const SizedBox(height: 4),
-                  const Text('Share your plant discovery with the community', style: AppTokens.body),
+                   Text('Share your plant discovery with the community', style: AppTokens.body),
                   const SizedBox(height: 12),
 
                   // image drop
@@ -377,7 +354,7 @@ class SubmitPlantDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                       border: Border.all(color: AppTokens.cardBorder),
                     ),
-                    child: const Center(
+                    child:  Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -405,7 +382,7 @@ class SubmitPlantDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                       border: Border.all(color: AppTokens.cardBorder),
                     ),
-                    child: const Row(
+                    child:  Row(
                       children: [
                         Icon(Icons.info_outline, color: AppTokens.emerald500),
                         SizedBox(width: 8),
@@ -457,21 +434,21 @@ class SubmitPlantDialog extends StatelessWidget {
       child: TextField(
         controller: ctrl,
         maxLines: maxLines,
-        style: const TextStyle(color: AppTokens.textPrimary),
+        style:  TextStyle(color: AppTokens.textPrimary),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          hintStyle: const TextStyle(color: AppTokens.textSecondary),
-          labelStyle: const TextStyle(color: AppTokens.textSecondary),
+          hintStyle:  TextStyle(color: AppTokens.textSecondary),
+          labelStyle:  TextStyle(color: AppTokens.textSecondary),
           filled: true,
           fillColor: AppTokens.cardDark,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-            borderSide: const BorderSide(color: AppTokens.cardBorder),
+            borderSide:  BorderSide(color: AppTokens.cardBorder),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-            borderSide: const BorderSide(color: AppTokens.emerald500),
+            borderSide:  BorderSide(color: AppTokens.emerald500),
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),

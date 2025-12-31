@@ -14,12 +14,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   InputDecoration _dec(String label) => InputDecoration(
     labelText: label,
-    labelStyle: const TextStyle(color: AppTokens.textSecondary),
+    labelStyle:  TextStyle(color: AppTokens.textSecondary),
     filled: true,
     fillColor: AppTokens.cardDark,
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-      borderSide: const BorderSide(color: AppTokens.cardBorder),
+      borderSide:  BorderSide(color: AppTokens.cardBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
@@ -39,9 +39,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('Obnoviť heslo', style: AppTokens.h1),
+           Text('Obnoviť heslo', style: AppTokens.h1),
           const SizedBox(height: 6),
-          const Text(
+           Text(
             'Zadajte svoj e-mail, kam vám pošleme odkaz na obnovenie hesla.',
             style: AppTokens.body,
           ),
@@ -53,7 +53,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             padding: const EdgeInsets.all(14),
             child: TextField(
               controller: emailCtrl,
-              style: const TextStyle(color: AppTokens.textPrimary),
+              style:  TextStyle(color: AppTokens.textPrimary),
               decoration: _dec('E-mail'),
             ),
           ),

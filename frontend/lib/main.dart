@@ -1,45 +1,53 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/discover_screen.dart';
-import 'screens/challenges_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/about_screen.dart';
 import 'game/game_screen.dart';
+import 'screens/splash_screen.dart';
+import 'services/auth_service.dart';
+import 'screens/plants_screen.dart';
+import 'theme/app_theme.dart';
+import 'package:flutter/services.dart';
+import 'services/prefs_service.dart';
+import 'package:vibration/vibration.dart';
+import 'services/haptics_service.dart';
 
-// theme helpers
 import 'theme/tokens.dart';
 import 'widgets/neon.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppTheme.load();
   runApp(const BotanikApp());
 }
+
+
 
 class BotanikApp extends StatelessWidget {
   const BotanikApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Botanik',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: AppTokens.pageBg,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppTokens.headerBg,
-          foregroundColor: AppTokens.greenDark,
-          elevation: 0,
-        ),
-        colorScheme: const ColorScheme.light(
-          primary: AppTokens.emerald500,
-          secondary: AppTokens.green600,
-        ),
-        useMaterial3: true,
-      ),
-      home: const MainScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppTheme.mode,
+      builder: (context, mode, _) {
+        return MaterialApp(
+          title: 'Botanik',
+          debugShowCheckedModeBanner: false,
+          initialRoute: '/',
+          routes: {
+            '/': (_) => const SplashScreen(),
+            '/main': (_) => const MainScreen(),
+          },
+          themeMode: mode,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+        );
+      },
     );
   }
 }
@@ -51,38 +59,78 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  // vnútorný navigator pre obsah (telo) – bar ostáva
   final GlobalKey<NavigatorState> _shellNavKey = GlobalKey<NavigatorState>();
-
   int _selectedIndex = 0;
 
-  // posledná položka v spodnej lište je spúšťač menu (nie tab)
+  // 🔥 pridane – token info
+  String? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadToken();
+  }
+
+  Future<void> _loadToken() async {
+    final t = await AuthService.getToken();
+    setState(() => _token = t);
+  }
+
+  Future<void> _logout() async {
+    await AuthService.clearToken();
+    setState(() => _token = null);
+
+    Navigator.pop(context); // zavrie bottom sheet
+
+    // presmeruje na login
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
   final List<Widget> _tabs = const [
     HomeScreen(),
     DiscoverScreen(),
     GameScreen(),
-    ChallengesScreen(),
+    PlantsScreen(),
   ];
 
-  void _onItemTapped(int index) {
+  Future<void> _onItemTapped(int index) async {
     if (index == 4) {
       _showBottomMenu(context);
       return;
     }
+
+    if (index != _selectedIndex) {
+      final vibEnabled = await PrefsService.vibrationsEnabled();
+      if (vibEnabled) {
+        final hasVibrator = await Vibration.hasVibrator() ?? false;
+
+        if (hasVibrator) {
+          // krátka jemná vibrácia
+          Vibration.vibrate(duration: 18);
+        } else {
+          // fallback (napr. tablet / emulátor)
+          HapticFeedback.selectionClick();
+        }
+      }
+    }
+
     setState(() {
       _selectedIndex = index;
       _shellNavKey.currentState?.popUntil((r) => r.isFirst);
     });
   }
 
-  // otvorenie obrazoviek v rámci shell navigátora (bar ostáva)
+
   void _pushInShell(Widget screen) {
     _shellNavKey.currentState?.push(
       MaterialPageRoute(builder: (_) => screen),
     );
   }
 
-  // Neon bottom sheet menu
+  // 🔥 UPRAVENÝ bottom sheet menu
   void _showBottomMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -104,12 +152,14 @@ class _MainScreenState extends State<MainScreen> {
                 top: Radius.circular(AppTokens.radiusLg),
               ),
               border: Border.all(color: AppTokens.cardBorder, width: 1),
-              boxShadow: AppTokens.glow(AppTokens.green400, blur: 18, alpha: .14),
+              boxShadow:
+              AppTokens.glow(AppTokens.green400, blur: 18, alpha: .14),
             ),
             child: SafeArea(
               top: false,
               child: Padding(
-                padding: EdgeInsets.fromLTRB(16, 14, 16, 12 + mq.padding.bottom),
+                padding:
+                EdgeInsets.fromLTRB(16, 14, 16, 12 + mq.padding.bottom),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -124,28 +174,41 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      _MenuTile(
-                        label: 'Profil',
-                        onTap: () {
-                          Navigator.pop(context);
-                          _pushInShell(const ProfileScreen());
-                        },
-                      ),
-                      _MenuTile(
-                        label: 'Prihlásiť sa',
-                        onTap: () {
-                          Navigator.pop(context);
-                          _pushInShell(const LoginScreen());
-                        },
-                      ),
-                      _MenuTile(
-                        label: 'Registrovať sa',
-                        onTap: () {
-                          Navigator.pop(context);
-                          _pushInShell(const RegisterScreen());
-                        },
-                      ),
-                      const Divider(color: AppTokens.divider),
+                      // 🔵 PRIHLASENY UZÍVATEĽ
+                      if (_token != null) ...[
+                        _MenuTile(
+                          label: 'Profil',
+                          onTap: () {
+                            Navigator.pop(context);
+                            _pushInShell(const ProfileScreen());
+                          },
+                        ),
+                        _MenuTile(
+                          label: 'Odhlásiť sa',
+                          onTap: _logout,
+                        ),
+                      ],
+
+                      // 🔴 NEPRIHASENÝ UŽÍVATEĽ
+                      if (_token == null) ...[
+                        _MenuTile(
+                          label: 'Prihlásiť sa',
+                          onTap: () {
+                            Navigator.pop(context);
+                            _pushInShell(const LoginScreen());
+                          },
+                        ),
+                        _MenuTile(
+                          label: 'Registrovať sa',
+                          onTap: () {
+                            Navigator.pop(context);
+                            _pushInShell(const RegisterScreen());
+                          },
+                        ),
+                      ],
+
+                       Divider(color: AppTokens.divider),
+
                       _MenuTile(
                         label: 'Nastavenia',
                         onTap: () {
@@ -172,51 +235,62 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  // jednotný item pre PNG ikony v bare
-  BottomNavigationBarItem _pngItem(String asset) => BottomNavigationBarItem(
-    icon: SizedBox(
-      width: 26,
-      height: 26,
-      child: Image.asset(asset, fit: BoxFit.contain),
-    ),
-    activeIcon: SizedBox(
-      width: 28,
-      height: 28,
-      child: Image.asset(asset, fit: BoxFit.contain),
-    ),
-    label: '',
-  );
+  BottomNavigationBarItem _pngItem(
+      String asset, {
+        double size = 26,
+        double activeSize = 28,
+      }) =>
+      BottomNavigationBarItem(
+        icon: SizedBox(
+          width: size,
+          height: size,
+          child: Image.asset(asset, fit: BoxFit.contain),
+        ),
+        activeIcon: SizedBox(
+          width: activeSize,
+          height: activeSize,
+          child: Image.asset(asset, fit: BoxFit.contain),
+        ),
+        label: '',
+      );
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // horný pás so spoločným gradientom
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(42),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(height: 55, decoration: BoxDecoration(gradient: AppTokens.tealGradient)),
+            Container(
+                height: 55,
+                decoration: BoxDecoration(gradient: AppTokens.tealGradient)),
             Container(height: 1, color: AppTokens.headerSeparator),
           ],
         ),
       ),
-
-      // telo s vnútorným Navigatorom – bar ostáva viditeľný
-      body: Navigator(
-        key: _shellNavKey,
-        onGenerateRoute: (_) => MaterialPageRoute(
-          builder: (_) => _tabs[_selectedIndex],
-        ),
+      body: ValueListenableBuilder<ThemeMode>(
+        valueListenable: AppTheme.mode,
+        builder: (context, mode, _) {
+          return Navigator(
+            key: _shellNavKey,
+            onGenerateRoute: (_) => MaterialPageRoute(
+              builder: (_) => KeyedSubtree(
+                key: ValueKey(mode), // ✅ vynúti rebuild po zmene dark/light
+                child: _tabs[_selectedIndex],
+              ),
+            ),
+          );
+        },
       ),
-
-      // spodná navigácia – bezpečná voči overflow vďaka SafeArea a bez fixnej výšky
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
-          decoration: const BoxDecoration(
+          decoration:  BoxDecoration(
             color: AppTokens.navBg,
-            border: Border(top: BorderSide(color: AppTokens.navBorder, width: 1)),
+            border:
+            Border(top: BorderSide(color: AppTokens.navBorder, width: 1)),
           ),
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: BottomNavigationBar(
@@ -234,10 +308,15 @@ class _MainScreenState extends State<MainScreen> {
             items: [
               _pngItem('lib/utils/images/home.png'),
               _pngItem('lib/utils/images/loupe.png'),
+              _pngItem(
+                'lib/utils/images/gps.png',
+                size: 30,
+                activeSize: 34,
+              ),
               _pngItem('lib/utils/images/plant.png'),
-              _pngItem('lib/utils/images/trophy.png'),
-              _pngItem('lib/utils/images/filter.png'), // spúšťač menu
+              _pngItem('lib/utils/images/filter.png'),
             ],
+
           ),
         ),
       ),
@@ -245,7 +324,6 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-/// položka v bottom-sheet menu – o trochu väčšie bubliny, rozostupy zostanú vzdušné
 class _MenuTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
@@ -265,15 +343,19 @@ class _MenuTile extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 10),
         title: Text(
           label,
-          style: const TextStyle(fontSize: 15, color: AppTokens.textPrimary),
+          style: TextStyle(fontSize: 15, color: AppTokens.textPrimary),
         ),
-        trailing: const Icon(
+        trailing: Icon(
           Icons.chevron_right,
           color: AppTokens.textSecondary,
           size: 20,
         ),
-        onTap: onTap,
+        onTap: () async {
+          await HapticsService.tap(); // ✅ vibrácia
+          onTap();
+        },
       ),
     );
   }
 }
+

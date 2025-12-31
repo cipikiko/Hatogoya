@@ -40,7 +40,7 @@ class _PlantsScreenState extends State<PlantsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text(
+           Text(
             'All Plants',
             style: TextStyle(
               fontSize: 26,
@@ -49,7 +49,7 @@ class _PlantsScreenState extends State<PlantsScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
+           Text(
             'Browse, search, and explore discovered plants',
             style: AppTokens.body,
           ),
@@ -58,18 +58,18 @@ class _PlantsScreenState extends State<PlantsScreen> {
           // 🔍 Search Bar (dark + tokens)
           TextField(
             controller: _searchController,
-            style: const TextStyle(color: AppTokens.textPrimary),
+            style:  TextStyle(color: AppTokens.textPrimary),
             onChanged: (value) => setState(() => _searchQuery = value),
             decoration: InputDecoration(
               hintText: 'Search plants...',
-              hintStyle: const TextStyle(color: AppTokens.textSecondary),
-              prefixIcon: const Icon(Icons.search, color: AppTokens.textSecondary),
+              hintStyle:  TextStyle(color: AppTokens.textSecondary),
+              prefixIcon:  Icon(Icons.search, color: AppTokens.textSecondary),
               filled: true,
               fillColor: AppTokens.cardDark,
-              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              contentPadding:  EdgeInsets.symmetric(vertical: 0),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                borderSide: const BorderSide(color: AppTokens.cardBorder),
+                borderSide:  BorderSide(color: AppTokens.cardBorder),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppTokens.radiusMd),
@@ -141,7 +141,7 @@ class _PlantsScreenState extends State<PlantsScreen> {
                             children: [
                               Text(
                                 plant['name'] as String,
-                                style: const TextStyle(
+                                style:  TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 15,
                                   color: AppTokens.textPrimary,
@@ -149,7 +149,7 @@ class _PlantsScreenState extends State<PlantsScreen> {
                               ),
                               Text(
                                 plant['latin'] as String,
-                                style: const TextStyle(
+                                style:  TextStyle(
                                   fontStyle: FontStyle.italic,
                                   color: AppTokens.textSecondary,
                                 ),

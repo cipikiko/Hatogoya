@@ -16,7 +16,7 @@ class AboutScreen extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
-        children: const [
+        children:  [
           NeonCard(
             color: AppTokens.cardDark,
             shadows: AppTokens.tileShadow,
