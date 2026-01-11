@@ -8,8 +8,7 @@ class AppTheme {
   static const _darkKey = 'darkMode';
 
   /// MaterialApp počúva toto
-  static final ValueNotifier<ThemeMode> mode =
-  ValueNotifier(ThemeMode.light);
+  static final ValueNotifier<ThemeMode> mode = ValueNotifier(ThemeMode.light);
 
   static bool get isDark => mode.value == ThemeMode.dark;
 
@@ -51,31 +50,27 @@ class AppTheme {
   // =========================
   static final ThemeData light = ThemeData(
     brightness: Brightness.light,
-
     scaffoldBackgroundColor: AppTokens.canvasLight,
-
     appBarTheme: const AppBarTheme(
       backgroundColor: AppTokens.canvasLight,
       foregroundColor: AppTokens.textPrimaryLight,
       elevation: 0,
     ),
-
     colorScheme: const ColorScheme.light(
       primary: AppTokens.emerald500,
       secondary: AppTokens.green600,
       surface: AppTokens.cardLight,
       onSurface: AppTokens.textPrimaryLight,
     ),
-
     dividerColor: AppTokens.dividerLight,
 
     switchTheme: SwitchThemeData(
-      trackColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) return AppTokens.green400;
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return AppTokens.green400;
         return AppTokens.borderLight;
       }),
-      thumbColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) return Colors.black;
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return Colors.black;
         return Colors.white;
       }),
     ),
@@ -88,31 +83,27 @@ class AppTheme {
   // =========================
   static final ThemeData dark = ThemeData(
     brightness: Brightness.dark,
-
     scaffoldBackgroundColor: AppTokens.canvasDark,
-
     appBarTheme: const AppBarTheme(
       backgroundColor: AppTokens.canvasDark,
       foregroundColor: AppTokens.textPrimaryDark,
       elevation: 0,
     ),
-
     colorScheme: const ColorScheme.dark(
       primary: AppTokens.emerald500,
       secondary: AppTokens.green600,
       surface: AppTokens.surfaceDark,
       onSurface: AppTokens.textPrimaryDark,
     ),
-
     dividerColor: AppTokens.dividerDark,
 
     switchTheme: SwitchThemeData(
-      trackColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) return AppTokens.green400;
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return AppTokens.green400;
         return AppTokens.borderDark;
       }),
-      thumbColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) return Colors.black;
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return Colors.black;
         return Colors.white;
       }),
     ),

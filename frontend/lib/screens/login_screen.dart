@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'forgot_password_screen.dart';
+
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
 import '../services/api_service.dart';
 import 'register_screen.dart';
 import '../services/auth_service.dart';
 import '../main.dart';
+import '../lang/strings.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -37,12 +40,14 @@ class _LoginScreenState extends State<LoginScreen> {
   );
 
   Future<void> handleLogin() async {
+    final tr = context.tr;
+
     final username = usernameCtrl.text.trim();
     final password = passwordCtrl.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vyplňte všetky polia")),
+        SnackBar(content: Text(tr.loginFillAllFields)),
       );
       return;
     }
@@ -53,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("DEV login (offline)")),
+        SnackBar(content: Text(tr.loginDevOffline)),
       );
 
       Navigator.pushReplacement(
@@ -65,7 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Normálny login cez backend
     final result = await ApiService.login(username, password);
-
     if (!mounted) return;
 
     if (result["status"] == 200) {
@@ -73,11 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
       final token = body["token"]?.toString() ?? username;
 
       await AuthService.saveToken(token);
-
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Prihlásenie úspešné")),
+        SnackBar(content: Text(tr.loginSuccess)),
       );
 
       Navigator.pushReplacement(
@@ -85,14 +88,12 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (_) => const MainScreen()),
       );
     } else {
+      final msg = (result["body"] is Map && result["body"]["message"] != null)
+          ? result["body"]["message"].toString()
+          : tr.loginInvalidCreds;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            (result["body"] is Map && result["body"]["message"] != null)
-                ? result["body"]["message"].toString()
-                : "Nesprávne meno alebo heslo",
-          ),
-        ),
+        SnackBar(content: Text(msg)),
       );
     }
   }
@@ -106,9 +107,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prihlásenie'),
+        title: Text(tr.loginTitle),
         foregroundColor: Colors.white,
         flexibleSpace: Container(
           decoration: BoxDecoration(gradient: AppTokens.tealGradient),
@@ -118,12 +121,9 @@ class _LoginScreenState extends State<LoginScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Vitajte späť', style: AppTokens.h1),
+          Text(tr.loginWelcomeTitle, style: AppTokens.h1),
           const SizedBox(height: 6),
-          Text(
-            'Prihláste sa a pokračujte v objavovaní botanickej záhrady.',
-            style: AppTokens.body,
-          ),
+          Text(tr.loginWelcomeSubtitle, style: AppTokens.body),
           const SizedBox(height: 20),
 
           NeonCard(
@@ -135,14 +135,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextField(
                   controller: usernameCtrl,
                   style: TextStyle(color: AppTokens.textPrimary),
-                  decoration: _dec('Používateľské meno'),
+                  decoration: _dec(tr.loginUsernameLabel),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: passwordCtrl,
                   obscureText: true,
                   style: TextStyle(color: AppTokens.textPrimary),
-                  decoration: _dec('Heslo'),
+                  decoration: _dec(tr.loginPasswordLabel),
                 ),
               ],
             ),
@@ -162,9 +162,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                 ),
               ),
-              child: const Text(
-                'Prihlásiť sa',
-                style: TextStyle(fontSize: 16),
+              child: Text(
+                tr.loginButton,
+                style: const TextStyle(fontSize: 16),
               ),
             ),
           ),
@@ -181,12 +181,12 @@ class _LoginScreenState extends State<LoginScreen> {
               },
               child: Text.rich(
                 TextSpan(
-                  text: 'Nemáte účet? ',
+                  text: tr.loginNoAccount,
                   style: TextStyle(color: AppTokens.textPrimary, fontSize: 14),
-                  children: const [
+                  children: [
                     TextSpan(
-                      text: 'Zaregistrujte sa',
-                      style: TextStyle(
+                      text: tr.loginGoRegister,
+                      style: const TextStyle(
                         color: AppTokens.emerald500,
                         fontWeight: FontWeight.bold,
                       ),
@@ -198,6 +198,26 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
 
           const SizedBox(height: 8),
+
+          Center(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                );
+              },
+              child: Text(
+                tr.loginForgotPassword,
+                style: TextStyle(
+                  color: AppTokens.emerald500,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+
         ],
       ),
     );

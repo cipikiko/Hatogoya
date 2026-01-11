@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
+import '../lang/strings.dart';
 
 class TermsScreen extends StatelessWidget {
   const TermsScreen({super.key});
@@ -16,7 +17,7 @@ class TermsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Privacy & Terms'),
+        title: Text(context.tr.termsTitle),
         foregroundColor: Colors.white,
         flexibleSpace: Container(
           decoration: BoxDecoration(gradient: headerGradient),
@@ -30,7 +31,7 @@ class TermsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Privacy Policy',
+                context.tr.privacyPolicyTitle,
                 style: TextStyle(
                   color: onSurface,
                   fontSize: 16,
@@ -39,14 +40,13 @@ class TermsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Your privacy is important to us. This application does not '
-                    'share personal data with third parties. Collected information '
-                    'is used only to improve the user experience.',
+                context.tr.privacyPolicyBody,
                 style: TextStyle(color: secondary, fontSize: 14),
               ),
               const SizedBox(height: 24),
+
               Text(
-                'Terms of Use',
+                context.tr.termsOfUseTitle,
                 style: TextStyle(
                   color: onSurface,
                   fontSize: 16,
@@ -55,14 +55,13 @@ class TermsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'By using this application, you agree to use it responsibly. '
-                    'All content is provided as-is without warranties. '
-                    'Misuse of the application is prohibited.',
+                context.tr.termsOfUseBody,
                 style: TextStyle(color: secondary, fontSize: 14),
               ),
               const SizedBox(height: 24),
+
               Text(
-                'Contact',
+                context.tr.contactTitle,
                 style: TextStyle(
                   color: onSurface,
                   fontSize: 16,
@@ -71,8 +70,7 @@ class TermsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'If you have any questions regarding privacy or terms, '
-                    'please contact the application administrator.',
+                context.tr.contactBody,
                 style: TextStyle(color: secondary, fontSize: 14),
               ),
             ],

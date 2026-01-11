@@ -7,7 +7,7 @@ class HapticsService {
     final enabled = await PrefsService.vibrationsEnabled();
     if (!enabled) return;
 
-    final hasVibrator = await Vibration.hasVibrator() ?? false;
+    final hasVibrator = await Vibration.hasVibrator();
 
     if (hasVibrator) {
       Vibration.vibrate(duration: 18);

@@ -18,28 +18,22 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _startFlow() async {
-    // necháme bežať tvoju animáciu 3 sekundy
     await Future.delayed(const Duration(seconds: 3));
-
     if (!mounted) return;
 
-    // 🔥 skontroluj token
     final token = await AuthService.getToken();
+    if (!mounted) return;
 
-    if (token == null) {
-      // ❌ user nie je prihlásený → ide registrovať
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const RegisterScreen()),
-      );
-    } else {
-      // ✔ user je prihlásený → ide rovno do appky
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => token == null
+            ? const RegisterScreen()
+            : const MainScreen(),
+      ),
+    );
   }
+
 
   @override
   Widget build(BuildContext context) {

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:vibration/vibration.dart';
 import 'screens/home_screen.dart';
 import 'screens/discover_screen.dart';
 import 'screens/profile_screen.dart';
@@ -8,24 +11,25 @@ import 'screens/settings_screen.dart';
 import 'screens/about_screen.dart';
 import 'game/game_screen.dart';
 import 'screens/splash_screen.dart';
-import 'services/auth_service.dart';
 import 'screens/plants_screen.dart';
-import 'theme/app_theme.dart';
-import 'package:flutter/services.dart';
-import 'services/prefs_service.dart';
-import 'package:vibration/vibration.dart';
-import 'services/haptics_service.dart';
 
+import 'services/auth_service.dart';
+import 'services/prefs_service.dart';
+import 'services/haptics_service.dart';
+import 'services/lang_service.dart';
+
+import 'theme/app_theme.dart';
 import 'theme/tokens.dart';
 import 'widgets/neon.dart';
+import 'lang/strings.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppTheme.load();
+  await LangService.load();
   runApp(const BotanikApp());
+
 }
-
-
 
 class BotanikApp extends StatelessWidget {
   const BotanikApp({super.key});
@@ -35,17 +39,39 @@ class BotanikApp extends StatelessWidget {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: AppTheme.mode,
       builder: (context, mode, _) {
-        return MaterialApp(
-          title: 'Botanik',
-          debugShowCheckedModeBanner: false,
-          initialRoute: '/',
-          routes: {
-            '/': (_) => const SplashScreen(),
-            '/main': (_) => const MainScreen(),
+        return ValueListenableBuilder<Locale>(
+          valueListenable: LangService.locale,
+          builder: (context, loc, __) {
+            return LangProvider(
+              code: loc.languageCode,
+              child: MaterialApp(
+                title: 'Botanik',
+                debugShowCheckedModeBanner: false,
+                initialRoute: '/',
+                routes: {
+                  '/': (_) => const SplashScreen(),
+                  '/main': (_) => const MainScreen(),
+                },
+                themeMode: mode,
+                theme: AppTheme.light,
+                darkTheme: AppTheme.dark,
+
+                locale: loc,
+                supportedLocales: const [
+                  Locale('sk'),
+                  Locale('en'),
+                  Locale('nl'),
+                ],
+
+                localizationsDelegates: [
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+              ),
+
+            );
           },
-          themeMode: mode,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
         );
       },
     );
@@ -62,7 +88,6 @@ class _MainScreenState extends State<MainScreen> {
   final GlobalKey<NavigatorState> _shellNavKey = GlobalKey<NavigatorState>();
   int _selectedIndex = 0;
 
-  // 🔥 pridane – token info
   String? _token;
 
   @override
@@ -77,14 +102,12 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _logout() async {
+    final nav = Navigator.of(context);
     await AuthService.clearToken();
+    if (!mounted) return;
     setState(() => _token = null);
-
-    Navigator.pop(context); // zavrie bottom sheet
-
-    // presmeruje na login
-    Navigator.pushReplacement(
-      context,
+    if (nav.canPop()) nav.pop();
+    nav.pushReplacement(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
   }
@@ -105,13 +128,11 @@ class _MainScreenState extends State<MainScreen> {
     if (index != _selectedIndex) {
       final vibEnabled = await PrefsService.vibrationsEnabled();
       if (vibEnabled) {
-        final hasVibrator = await Vibration.hasVibrator() ?? false;
+        final hasVibrator = await Vibration.hasVibrator();
 
         if (hasVibrator) {
-          // krátka jemná vibrácia
           Vibration.vibrate(duration: 18);
         } else {
-          // fallback (napr. tablet / emulátor)
           HapticFeedback.selectionClick();
         }
       }
@@ -123,14 +144,12 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-
   void _pushInShell(Widget screen) {
     _shellNavKey.currentState?.push(
       MaterialPageRoute(builder: (_) => screen),
     );
   }
 
-  // 🔥 UPRAVENÝ bottom sheet menu
   void _showBottomMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -143,6 +162,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       builder: (context) {
         final mq = MediaQuery.of(context);
+        final tr = context.tr;
         return ConstrainedBox(
           constraints: BoxConstraints(maxHeight: mq.size.height * 0.7),
           child: Container(
@@ -152,14 +172,12 @@ class _MainScreenState extends State<MainScreen> {
                 top: Radius.circular(AppTokens.radiusLg),
               ),
               border: Border.all(color: AppTokens.cardBorder, width: 1),
-              boxShadow:
-              AppTokens.glow(AppTokens.green400, blur: 18, alpha: .14),
+              boxShadow: AppTokens.glow(AppTokens.green400, blur: 18, alpha: .14),
             ),
             child: SafeArea(
               top: false,
               child: Padding(
-                padding:
-                EdgeInsets.fromLTRB(16, 14, 16, 12 + mq.padding.bottom),
+                padding: EdgeInsets.fromLTRB(16, 14, 16, 12 + mq.padding.bottom),
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -174,55 +192,54 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // 🔵 PRIHLASENY UZÍVATEĽ
-                      if (_token != null) ...[
-                        _MenuTile(
-                          label: 'Profil',
-                          onTap: () {
-                            Navigator.pop(context);
-                            _pushInShell(const ProfileScreen());
-                          },
-                        ),
-                        _MenuTile(
-                          label: 'Odhlásiť sa',
-                          onTap: _logout,
-                        ),
-                      ],
+                    if (_token != null) ...[
+                _MenuTile(
+                label: tr.menuProfile,
+                onTap: () {
+                  Navigator.pop(context);
+                  _pushInShell(const ProfileScreen());
+                },
+              ),
+                _MenuTile(
+                  label: tr.menuLogout,
+                  onTap: _logout,
+                ),
+                ],
 
-                      // 🔴 NEPRIHASENÝ UŽÍVATEĽ
-                      if (_token == null) ...[
-                        _MenuTile(
-                          label: 'Prihlásiť sa',
-                          onTap: () {
-                            Navigator.pop(context);
-                            _pushInShell(const LoginScreen());
-                          },
-                        ),
-                        _MenuTile(
-                          label: 'Registrovať sa',
-                          onTap: () {
-                            Navigator.pop(context);
-                            _pushInShell(const RegisterScreen());
-                          },
-                        ),
-                      ],
+                if (_token == null) ...[
+            _MenuTile(
+            label: tr.menuLogin,
+            onTap: () {
+              Navigator.pop(context);
+              _pushInShell(const LoginScreen());
+            },
+          ),
+            _MenuTile(
+              label: tr.menuRegister,
+              onTap: () {
+                Navigator.pop(context);
+                _pushInShell(const RegisterScreen());
+              },
+            ),
+            ],
 
-                       Divider(color: AppTokens.divider),
+            Divider(color: AppTokens.divider),
 
-                      _MenuTile(
-                        label: 'Nastavenia',
-                        onTap: () {
-                          Navigator.pop(context);
-                          _pushInShell(const SettingsScreen());
-                        },
-                      ),
-                      _MenuTile(
-                        label: 'O aplikácii',
-                        onTap: () {
-                          Navigator.pop(context);
-                          _pushInShell(const AboutScreen());
-                        },
-                      ),
+        _MenuTile(
+        label: tr.menuSettings,
+        onTap: () {
+        Navigator.pop(context);
+        _pushInShell(const SettingsScreen());
+        },
+        ),
+        _MenuTile(
+        label: tr.menuAbout,
+        onTap: () {
+        Navigator.pop(context);
+        _pushInShell(const AboutScreen());
+        },
+        ),
+
                       const SizedBox(height: 6),
                     ],
                   ),
@@ -254,7 +271,6 @@ class _MainScreenState extends State<MainScreen> {
         label: '',
       );
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -264,8 +280,9 @@ class _MainScreenState extends State<MainScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-                height: 55,
-                decoration: BoxDecoration(gradient: AppTokens.tealGradient)),
+              height: 55,
+              decoration: BoxDecoration(gradient: AppTokens.tealGradient),
+            ),
             Container(height: 1, color: AppTokens.headerSeparator),
           ],
         ),
@@ -277,7 +294,7 @@ class _MainScreenState extends State<MainScreen> {
             key: _shellNavKey,
             onGenerateRoute: (_) => MaterialPageRoute(
               builder: (_) => KeyedSubtree(
-                key: ValueKey(mode), // ✅ vynúti rebuild po zmene dark/light
+                key: ValueKey(mode),
                 child: _tabs[_selectedIndex],
               ),
             ),
@@ -287,10 +304,9 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
-          decoration:  BoxDecoration(
+          decoration: BoxDecoration(
             color: AppTokens.navBg,
-            border:
-            Border(top: BorderSide(color: AppTokens.navBorder, width: 1)),
+            border: Border(top: BorderSide(color: AppTokens.navBorder, width: 1)),
           ),
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: BottomNavigationBar(
@@ -308,15 +324,10 @@ class _MainScreenState extends State<MainScreen> {
             items: [
               _pngItem('lib/utils/images/home.png'),
               _pngItem('lib/utils/images/loupe.png'),
-              _pngItem(
-                'lib/utils/images/gps.png',
-                size: 30,
-                activeSize: 34,
-              ),
+              _pngItem('lib/utils/images/gps.png', size: 30, activeSize: 34),
               _pngItem('lib/utils/images/plant.png'),
               _pngItem('lib/utils/images/filter.png'),
             ],
-
           ),
         ),
       ),
@@ -351,11 +362,10 @@ class _MenuTile extends StatelessWidget {
           size: 20,
         ),
         onTap: () async {
-          await HapticsService.tap(); // ✅ vibrácia
+          await HapticsService.tap();
           onTap();
         },
       ),
     );
   }
 }
-

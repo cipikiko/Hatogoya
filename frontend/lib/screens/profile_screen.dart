@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
+import '../lang/strings.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,15 +11,16 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  void _openSubmitPlantDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => const SubmitPlantDialog(),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+
+    // demo numbers (your real values can come later)
+    const foundPlants = 47;
+    const totalPlants = 120;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
       child: Column(
@@ -34,36 +36,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: const [
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Colors.white24,
-                      child: Icon(Icons.eco, color: Colors.white, size: 28),
-                    ),
-                    SizedBox(width: 12),
-                    _HeaderTitle(),
-                  ]),
+                  Row(
+                    children: const [
+                      CircleAvatar(
+                        radius: 25,
+                        backgroundColor: Colors.white24,
+                        child: Icon(Icons.eco, color: Colors.white, size: 28),
+                      ),
+                      SizedBox(width: 12),
+                      _HeaderTitle(),
+                    ],
+                  ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Plants discovered',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  Text(
+                    tr.profilePlantsDiscovered,
+                    style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 6),
-                  const ClipRRect(
-                    borderRadius: BorderRadius.all(Radius.circular(6)),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.all(Radius.circular(6)),
                     child: LinearProgressIndicator(
-                      value: 47 / 120, // ✅ random: discovered / total
+                      value: foundPlants / totalPlants,
                       minHeight: 8,
                       backgroundColor: Colors.white24,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Align(
+                  Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      '47 / 120 plants',
-                      style: TextStyle(color: Colors.white, fontSize: 13),
+                      tr.profileProgressPlants(foundPlants, totalPlants),
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ),
                 ],
@@ -72,66 +76,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
 
           const SizedBox(height: 22),
-          // Stats (2 + 2)
+
+          // Stats (2)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              _StatBox(label: 'Total Visits', value: '32', icon: Icons.place),
-              _StatBox(label: 'Plants Found', value: '47', icon: Icons.eco),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
+              _StatBox(label: tr.profileTotalVisits, value: '32', icon: Icons.place),
+              _StatBox(label: tr.profilePlantsFound, value: '$foundPlants', icon: Icons.eco),
             ],
           ),
 
           const SizedBox(height: 28),
 
-           Text('Recent Activity',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
-          const SizedBox(height: 10),
-
-          const _ActivityCard(
-            title: 'Discovered Monstera Deliciosa',
-            date: 'Oct 15, 2025',
-            color: Color(0xFFA5D6A7),
-          ),
-          const _ActivityCard(
-            title: 'Completed Weekly Explorer Challenge',
-            date: 'Oct 14, 2025',
-            color: Color(0xFFB39DDB),
-          ),
-          const _ActivityCard(
-            title: 'Discovered Succulent Garden',
-            date: 'Oct 13, 2025',
-            color: Color(0xFF81C784),
-          ),
-
-          // Submit a Plant (banner-like CTA)
-          GestureDetector(
-            onTap: _openSubmitPlantDialog,
-            child: NeonCard(
-              color: AppTokens.cardDark,
-              shadows: AppTokens.glow(AppTokens.green400, blur: 12),
-              radius: AppTokens.radiusMd,
-              padding: const EdgeInsets.all(14),
-              child: Row(
-                children:  [
-                  Icon(Icons.upload_rounded, color: AppTokens.emerald500),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Submit a Plant\nShare your discovery with the community',
-                      style: TextStyle(color: AppTokens.textPrimary, height: 1.25, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, color: AppTokens.textSecondary, size: 18),
-                ],
-              ),
+          Text(
+            tr.profileRecentActivity,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: AppTokens.textPrimary,
             ),
           ),
+          const SizedBox(height: 10),
+
+          _ActivityCard(
+            title: tr.profileActivity1,
+            date: 'Oct 15, 2025',
+            color: const Color(0xFFA5D6A7),
+          ),
+          _ActivityCard(
+            title: tr.profileActivity2,
+            date: 'Oct 14, 2025',
+            color: const Color(0xFFB39DDB),
+          ),
+          _ActivityCard(
+            title: tr.profileActivity3,
+            date: 'Oct 13, 2025',
+            color: const Color(0xFF81C784),
+          ),
+
+          const SizedBox(height: 10),
+
+
         ],
       ),
     );
@@ -145,13 +130,24 @@ class _HeaderTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final tr = context.tr;
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Plant Explorer',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-        Text('Botanical Enthusiast', style: TextStyle(color: Colors.white70)),
-        Text('Member since September 2025', style: TextStyle(color: Colors.white60)),
+        Text(
+          tr.profileTitle,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        Text(tr.profileSubtitle, style: const TextStyle(color: Colors.white70)),
+        Text(
+          tr.profileMemberSince('September 2025'),
+          style: const TextStyle(color: Colors.white60),
+        ),
       ],
     );
   }
@@ -192,7 +188,7 @@ class _StatBox extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               value,
-              style:  TextStyle(
+              style: TextStyle(
                 color: AppTokens.textPrimary,
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
@@ -200,61 +196,10 @@ class _StatBox extends StatelessWidget {
             ),
             Text(
               label,
-              style:  TextStyle(fontSize: 12, color: AppTokens.textSecondary),
+              style: TextStyle(fontSize: 12, color: AppTokens.textSecondary),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _AchievementIcon extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final bool locked;
-
-  const _AchievementIcon({
-    required this.label,
-    required this.icon,
-    required this.color,
-    this.locked = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final iconBg = locked ? Colors.grey.withValues(alpha: 0.2) : color.withValues(alpha: 0.45);
-    final iconColor = locked ? Colors.grey.withValues(alpha: 0.7) : AppTokens.emerald500;
-
-    return AnimatedOpacity(
-      opacity: locked ? 0.6 : 1.0,
-      duration: const Duration(milliseconds: 350),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: iconBg,
-              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-              border: Border.all(color: locked ? AppTokens.cardBorder : Colors.transparent),
-              boxShadow: locked ? [] : AppTokens.glow(AppTokens.green400, blur: 10),
-            ),
-            child: Icon(icon, color: iconColor, size: 26),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11.5,
-              color: locked ? AppTokens.textSecondary : AppTokens.textPrimary,
-              height: 1.25,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
       ),
     );
   }
@@ -295,10 +240,19 @@ class _ActivityCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style:  TextStyle(color: AppTokens.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: AppTokens.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(date, style:  TextStyle(color: AppTokens.textSecondary, fontSize: 12)),
+                Text(
+                  date,
+                  style: TextStyle(color: AppTokens.textSecondary, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -315,6 +269,8 @@ class SubmitPlantDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+
     final TextEditingController nameController = TextEditingController();
     final TextEditingController scientificController = TextEditingController();
     final TextEditingController locationController = TextEditingController();
@@ -339,10 +295,16 @@ class SubmitPlantDialog extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Text('Submit a Plant',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTokens.textPrimary)),
+                  Text(
+                    tr.submitTitle,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: AppTokens.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                   Text('Share your plant discovery with the community', style: AppTokens.body),
+                  Text(tr.submitSubtitle, style: AppTokens.body),
                   const SizedBox(height: 12),
 
                   // image drop
@@ -354,27 +316,31 @@ class SubmitPlantDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                       border: Border.all(color: AppTokens.cardBorder),
                     ),
-                    child:  Center(
+                    child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.image_outlined, size: 40, color: AppTokens.textSecondary),
-                          SizedBox(height: 6),
-                          Text('Click to upload photo', style: AppTokens.body),
-                          Text('PNG, JPG up to 10MB',
-                              style: TextStyle(color: AppTokens.textSecondary, fontSize: 12)),
+                          const SizedBox(height: 6),
+                          Text(tr.submitUploadTitle, style: AppTokens.body),
+                          Text(
+                            tr.submitUploadHint,
+                            style: TextStyle(color: AppTokens.textSecondary, fontSize: 12),
+                          ),
                         ],
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 14),
-                  _inputField('Plant Name', 'e.g. Monstera Deliciosa', nameController),
-                  _inputField('Scientific Name (Optional)', 'e.g. Monstera deliciosa', scientificController),
-                  _inputField('Location in Garden', 'e.g. Tropical Zone A', locationController),
-                  _inputField('Description (Optional)', 'Tell us about this plant...', descriptionController, maxLines: 3),
+
+                  _inputField(tr.submitFieldPlantName, tr.submitHintPlantName, nameController),
+                  _inputField(tr.submitFieldScientificName, tr.submitHintScientificName, scientificController),
+                  _inputField(tr.submitFieldLocation, tr.submitHintLocation, locationController),
+                  _inputField(tr.submitFieldDescription, tr.submitHintDescription, descriptionController, maxLines: 3),
 
                   const SizedBox(height: 10),
+
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
@@ -382,15 +348,12 @@ class SubmitPlantDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                       border: Border.all(color: AppTokens.cardBorder),
                     ),
-                    child:  Row(
+                    child: Row(
                       children: [
                         Icon(Icons.info_outline, color: AppTokens.emerald500),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            'Your submission will be reviewed by our team before being added to the garden database.',
-                            style: AppTokens.body,
-                          ),
+                          child: Text(tr.submitInfoReview, style: AppTokens.body),
                         ),
                       ],
                     ),
@@ -402,13 +365,13 @@ class SubmitPlantDialog extends StatelessWidget {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
+                        child: Text(tr.cancel),
                       ),
                       const Spacer(),
                       ElevatedButton.icon(
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.upload, size: 18),
-                        label: const Text('Submit Plant'),
+                        label: Text(tr.submitButton),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTokens.green600,
                           foregroundColor: Colors.white,
@@ -428,27 +391,32 @@ class SubmitPlantDialog extends StatelessWidget {
     );
   }
 
-  Widget _inputField(String label, String hint, TextEditingController ctrl, {int maxLines = 1}) {
+  Widget _inputField(
+      String label,
+      String hint,
+      TextEditingController ctrl, {
+        int maxLines = 1,
+      }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: ctrl,
         maxLines: maxLines,
-        style:  TextStyle(color: AppTokens.textPrimary),
+        style: TextStyle(color: AppTokens.textPrimary),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          hintStyle:  TextStyle(color: AppTokens.textSecondary),
-          labelStyle:  TextStyle(color: AppTokens.textSecondary),
+          hintStyle: TextStyle(color: AppTokens.textSecondary),
+          labelStyle: TextStyle(color: AppTokens.textSecondary),
           filled: true,
           fillColor: AppTokens.cardDark,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-            borderSide:  BorderSide(color: AppTokens.cardBorder),
+            borderSide: BorderSide(color: AppTokens.cardBorder),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-            borderSide:  BorderSide(color: AppTokens.emerald500),
+            borderSide: BorderSide(color: AppTokens.emerald500),
           ),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
