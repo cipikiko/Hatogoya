@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS public.plants
     name text COLLATE pg_catalog."default" NOT NULL,
     description text COLLATE pg_catalog."default",
     wiki_url text COLLATE pg_catalog."default",
-    qr_token text COLLATE pg_catalog."default" NOT NULL,
+    qr_token text COLLATE pg_catalog."default" UNIQUE NOT NULL,
     CONSTRAINT plants_pkey PRIMARY KEY (id)
 )
 
