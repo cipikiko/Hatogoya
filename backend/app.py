@@ -4,6 +4,7 @@ from flask import Flask
 from models import db
 from register import register_bp
 from login import login_bp
+from scan import scan_bp
 from sqlalchemy import text
 
 load_dotenv()
@@ -21,11 +22,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# Register blueprints
 app.register_blueprint(register_bp)
 app.register_blueprint(login_bp)
+app.register_blueprint(scan_bp)
 
-# Test database connection on startup
+
+
 try:
     with app.app_context():
         with db.engine.connect() as connection:
@@ -36,4 +38,5 @@ except Exception as e:
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
+
