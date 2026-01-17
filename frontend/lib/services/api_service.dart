@@ -41,4 +41,38 @@ class ApiService {
       "body": jsonDecode(response.body)
     };
   }
+
+  // ✅ RESEND VERIFICATION EMAIL
+  static Future<Map<String, dynamic>> resendVerification(String email) async {
+    final url = Uri.parse("$baseUrl/resend-verification");
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "email": email
+      }),
+    );
+
+    return {
+      "status": response.statusCode,
+      "body": jsonDecode(response.body)
+    };
+  }
+
+  static Future<Map<String, dynamic>> requestPasswordReset(String email) async {
+    final url = Uri.parse("$baseUrl/request-password-reset");
+
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"email": email}),
+    );
+
+    return {
+      "status": response.statusCode,
+      "body": jsonDecode(response.body),
+    };
+  }
+
 }

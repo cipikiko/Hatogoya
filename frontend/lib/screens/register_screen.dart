@@ -1,8 +1,10 @@
+// register_screen.dart
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
 import '../services/api_service.dart';
 import 'login_screen.dart';
+import '../lang/strings.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -19,77 +21,81 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   InputDecoration _dec(String label) => InputDecoration(
     labelText: label,
-    labelStyle: const TextStyle(color: AppTokens.textSecondary),
+    labelStyle: TextStyle(color: AppTokens.textSecondary),
     filled: true,
     fillColor: AppTokens.cardDark,
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-      borderSide: const BorderSide(color: AppTokens.cardBorder),
+      borderSide: BorderSide(color: AppTokens.cardBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-      borderSide:
-      const BorderSide(color: AppTokens.emerald500, width: 1.5),
+      borderSide: const BorderSide(color: AppTokens.emerald500, width: 1.5),
     ),
   );
 
   /// 🔥 Funkcia na odoslanie registrácie do backendu
-  void handleRegister() async {
+  Future<void> handleRegister() async {
+    final tr = context.tr;
+
     final username = nameCtrl.text.trim();
     final email = emailCtrl.text.trim();
     final password = passCtrl.text.trim();
     final confirm = confirmCtrl.text.trim();
 
-    // Kontrola prázdnych polí
-    if (username.isEmpty ||
-        email.isEmpty ||
-        password.isEmpty ||
-        confirm.isEmpty) {
+    if (username.isEmpty || email.isEmpty || password.isEmpty || confirm.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vyplňte všetky polia.")),
+        SnackBar(content: Text(tr.registerFillAllFields)),
       );
       return;
     }
 
-    // Kontrola hesiel
     if (password != confirm) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Heslá sa nezhodujú.")),
+        SnackBar(content: Text(tr.registerPasswordsMismatch)),
       );
       return;
     }
 
-    // Odoslanie na backend
     final result = await ApiService.register(username, email, password);
+    if (!mounted) return;
 
     if (result["status"] == 201) {
-      // Úspech
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Registrácia bola úspešná!")),
+        SnackBar(content: Text(tr.registerSuccess)),
       );
 
-      // Prechod na login
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
     } else {
-      // Chyba backendu
+      final msg = (result["body"] is Map && result["body"]["message"] != null)
+          ? result["body"]["message"].toString()
+          : tr.registerError;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            result["body"]["message"] ?? "Chyba pri registrácii.",
-          ),
-        ),
+        SnackBar(content: Text(msg)),
       );
     }
   }
 
   @override
+  void dispose() {
+    nameCtrl.dispose();
+    emailCtrl.dispose();
+    passCtrl.dispose();
+    confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registrácia'),
+        title: Text(tr.registerTitle),
         foregroundColor: Colors.white,
         flexibleSpace: Container(
           decoration: BoxDecoration(gradient: AppTokens.tealGradient),
@@ -99,15 +105,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('Vytvorte si účet', style: AppTokens.h1),
+          Text(tr.registerHeaderTitle, style: AppTokens.h1),
           const SizedBox(height: 6),
-          const Text(
-            'Zaregistrujte sa a začnite svoju botanickú cestu.',
-            style: AppTokens.body,
-          ),
+          Text(tr.registerHeaderSubtitle, style: AppTokens.body),
           const SizedBox(height: 20),
 
-          // Form Card
           NeonCard(
             color: AppTokens.cardDark,
             shadows: AppTokens.tileShadow,
@@ -116,28 +118,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 TextField(
                   controller: nameCtrl,
-                  style: const TextStyle(color: AppTokens.textPrimary),
-                  decoration: _dec('Meno'),
+                  style: TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec(tr.registerNameLabel),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: emailCtrl,
-                  style: const TextStyle(color: AppTokens.textPrimary),
-                  decoration: _dec('E-mail'),
+                  style: TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec(tr.registerEmailLabel),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: passCtrl,
                   obscureText: true,
-                  style: const TextStyle(color: AppTokens.textPrimary),
-                  decoration: _dec('Heslo'),
+                  style: TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec(tr.registerPasswordLabel),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: confirmCtrl,
                   obscureText: true,
-                  style: const TextStyle(color: AppTokens.textPrimary),
-                  decoration: _dec('Potvrdiť heslo'),
+                  style: TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec(tr.registerConfirmPasswordLabel),
                 ),
               ],
             ),
@@ -145,7 +147,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
           const SizedBox(height: 16),
 
-          // Registračné tlačidlo
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -158,16 +159,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                 ),
               ),
-              child: const Text(
-                'Zaregistrovať sa',
-                style: TextStyle(fontSize: 16),
+              child: Text(
+                tr.registerButton,
+                style: const TextStyle(fontSize: 16),
               ),
             ),
           ),
 
           const SizedBox(height: 18),
 
-          // Prechod na login
           Center(
             child: GestureDetector(
               onTap: () {
@@ -176,15 +176,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   MaterialPageRoute(builder: (_) => const LoginScreen()),
                 );
               },
-              child: const Text.rich(
+              child: Text.rich(
                 TextSpan(
-                  text: 'Už ste zaregistrovaný? ',
+                  text: tr.registerAlreadyHave,
                   style: TextStyle(
-                      color: AppTokens.textPrimary, fontSize: 14),
+                    color: AppTokens.textPrimary,
+                    fontSize: 14,
+                  ),
                   children: [
                     TextSpan(
-                      text: 'Prihláste sa',
-                      style: TextStyle(
+                      text: tr.registerGoLogin,
+                      style: const TextStyle(
                         color: AppTokens.emerald500,
                         fontWeight: FontWeight.bold,
                       ),

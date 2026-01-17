@@ -1,490 +1,719 @@
 import 'package:flutter/material.dart';
-import '../theme/tokens.dart';
-import '../widgets/neon.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../theme/tokens.dart';
+import '../theme/app_theme.dart';
+import '../widgets/neon.dart';
+import 'package:timezone/timezone.dart' as tz;
+import '../models/news_item.dart';
+import '../services/news_service.dart';
+import '../services/lang_service.dart';
+import '../lang/strings.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // paging
+  bool _seeAll = false;
+  int _visibleCount = 2;
+
+  static const String _topStoryUrl = 'https://www.arboretumbaexem.com/#education';
+
+  // refresh trigger (keď klikneš Retry)
+  int _reloadTick = 0;
+
+  Future<void> _openUrl(String url) async {
+    final tr = context.tr;
+    final uri = Uri.parse(url);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.homeCouldNotOpen)),
+      );
+    }
+  }
+
+  void _retry() {
+    setState(() {
+      _reloadTick++; // donúti FutureBuilder spraviť nový future
+    });
+  }
+
+  void _onSeeAllPressed(int total) {
+    setState(() {
+      _seeAll = true;
+      _visibleCount = total >= 5 ? 5 : total;
+    });
+  }
+
+  void _loadMore(int total) {
+    setState(() {
+      final next = _visibleCount + 5;
+      _visibleCount = next > total ? total : next;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final double topPad = MediaQuery.of(context).padding.top;
+    // keď sa zmení LangService.locale, rebuildne sa aj FutureBuilder
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LangService.locale,
+      builder: (context, _, __) {
+        return ValueListenableBuilder<ThemeMode>(
+          valueListenable: AppTheme.mode,
+          builder: (context, _, __) {
+            final tr = context.tr;
+            final double topPad = MediaQuery.of(context).padding.top;
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.only(top: topPad, bottom: 24), // bez bočných okrajov hore
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ========= Level Card – edge to edge, prilepená na status bar =========
-          PulseGlow(
-            color: AppTokens.green400,
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: AppTokens.tealGradient,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(children: const [
-                        SizedBox(
-                          width: 56,
-                          height: 56,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: Colors.white24,
-                              borderRadius: BorderRadius.all(Radius.circular(16)),
-                            ),
-                            child: Center(
-                              child: BounceGentle(
-                                child: Icon(Icons.eco, color: Colors.white, size: 28),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        _LevelInfo(),
-                      ]),
-                      const _XpPill(current: 340, total: 500),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const ClipRRect(
-                    borderRadius: BorderRadius.all(Radius.circular(6)),
-                    child: LinearProgressIndicator(
-                      value: 340 / 500,
-                      minHeight: 8,
-                      backgroundColor: Colors.white24,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+            final Future<List<NewsItem>> future = NewsService.fetchLatest();
 
-          const SizedBox(height: 26),
-
-          // ========= Stat Tiles =========
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                _StatTile(
-                  gradient: AppTokens.statOrange,
-                  shadowSeed: AppTokens.orange,
-                  icon: Icons.local_fire_department,
-                  number: '12',
-                  label: 'Day Streak',
-                  numberColor: AppTokens.textPrimary,
-                  labelColor: AppTokens.textSecondary,
-                ),
-                _StatTile(
-                  gradient: AppTokens.statGreen,
-                  shadowSeed: AppTokens.emerald500,
-                  icon: Icons.eco,
-                  number: '47',
-                  label: 'Plants',
-                  numberColor: AppTokens.textPrimary,
-                  labelColor: AppTokens.textSecondary,
-                ),
-                _StatTile(
-                  gradient: AppTokens.statPurple,
-                  shadowSeed: AppTokens.purple,
-                  icon: Icons.workspace_premium_rounded,
-                  number: '23',
-                  label: 'Badges',
-                  numberColor: AppTokens.textPrimary,
-                  labelColor: AppTokens.textSecondary,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 22),
-
-          // ========= Daily Quest =========
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: NeonCard(
-              color: AppTokens.cardDark,
-              shadows: AppTokens.tileShadow,
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(top: topPad, bottom: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  _RowTitle(),
-                  SizedBox(height: 8),
-                  Text('Discover 3 New Plants', style: AppTokens.body),
-                  SizedBox(height: 12),
-                  Text('Progress', style: TextStyle(color: AppTokens.textSecondary, fontSize: 12)),
-                  SizedBox(height: 6),
-                  GradientProgressBar(value: 1 / 3),
+                children: [
+                  // ========= Header =========
+                  PulseGlow(
+                    color: AppTokens.green400,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: AppTokens.tealGradient,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        ),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(20, 28, 20, 18),
+                      child: Row(
+                        children: const [
+                          _HeaderIcon(),
+                          SizedBox(width: 12),
+                          _HeaderText(),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ========= Body =========
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: FutureBuilder<List<NewsItem>>(
+                      key: ValueKey('${LangService.code}-$_reloadTick'),
+                      future: future,
+                      builder: (context, snap) {
+                        final isLoading =
+                            snap.connectionState == ConnectionState.waiting ||
+                                snap.connectionState == ConnectionState.active;
+
+                        final errorMessage = snap.hasError ? tr.homeFailedLoad : null;
+
+                        final items = snap.data ?? const <NewsItem>[];
+
+                        return _buildBody(
+                          context,
+                          isLoading: isLoading,
+                          errorMessage: errorMessage,
+                          latestItems: items,
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
+            );
+          },
+        );
+      },
+    );
+  }
 
-          const SizedBox(height: 22),
+  Widget _buildBody(
+      BuildContext context, {
+        required bool isLoading,
+        required String? errorMessage,
+        required List<NewsItem> latestItems,
+      }) {
+    final tr = context.tr;
 
-          // ========= Recent Achievements =========
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: _SectionTitle(title: 'Recent Achievements'),
-          ),
+    if (isLoading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle(tr.homeTopStory),
           const SizedBox(height: 10),
+          const _SkeletonCard(height: 110),
+          const SizedBox(height: 16),
 
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+          // ✅ aj pri loadingu ukážeme skeleton pre otváracie hodiny
+          const _SkeletonCard(height: 92),
+          const SizedBox(height: 16),
+
+          _SectionTitle(tr.homeLatest),
+          const SizedBox(height: 10),
+          const _SkeletonCard(height: 72),
+          const SizedBox(height: 12),
+          const _SkeletonCard(height: 72),
+        ],
+      );
+    }
+
+    if (errorMessage != null) {
+      return NeonCard(
+        color: AppTokens.cardSurface,
+        shadows: AppTokens.tileShadow,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: AppTokens.textSecondary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(errorMessage, style: TextStyle(color: AppTokens.textSecondary)),
+            ),
+            TextButton(
+              onPressed: _retry,
+              child: Text(tr.homeRetry, style: TextStyle(color: AppTokens.emerald500)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final total = latestItems.length;
+    final bool showSeeAll = !_seeAll && total > 2;
+
+    final int shown = _seeAll
+        ? (_visibleCount > total ? total : _visibleCount)
+        : (total >= 2 ? 2 : total);
+
+    final visibleItems = latestItems.take(shown).toList();
+    final bool canLoadMore = _seeAll && shown < total;
+
+    final topStory = NewsItem(
+      title: tr.homeTopEduTitle,
+      subtitle: tr.homeTopEduSubtitle,
+      tag: tr.homeTagFeatured,
+      url: _topStoryUrl,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(tr.homeTopStory),
+        const SizedBox(height: 10),
+        _TopStoryCard(
+          item: topStory,
+          onTap: () => _openUrl(topStory.url),
+        ),
+        const SizedBox(height: 16),
+
+        // ✅ NOVÉ: Otváracie hodiny (medzi Top príbeh a Najnovšie)
+        const _OpeningHoursCard(),
+        const SizedBox(height: 16),
+
+        Row(
+          children: [
+            Expanded(child: _SectionTitle(tr.homeLatest)),
+            if (showSeeAll)
+              TextButton(
+                onPressed: () => _onSeeAllPressed(total),
+                child: Text(tr.homeSeeAll, style: TextStyle(color: AppTokens.emerald500)),
+              )
+            else if (_seeAll)
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _seeAll = false;
+                    _visibleCount = 2;
+                  });
+                },
+                child: Text(tr.homeShowLess, style: TextStyle(color: AppTokens.emerald500)),
+              )
+          ],
+        ),
+        const SizedBox(height: 6),
+
+        if (total == 0)
+          NeonCard(
+            color: AppTokens.cardSurface,
+            shadows: AppTokens.tileShadow,
+            padding: const EdgeInsets.all(18),
             child: Column(
               children: [
-                _AchievementCard(
-                  title: 'Early Bird',
-                  subtitle: 'Unlocked today',
-                  colorBlob: LinearGradient(
-                    colors: [Color(0xFFFFA94D), Color(0xFFFF6B6B)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                Icon(Icons.inbox_outlined, color: AppTokens.textSecondary, size: 34),
+                const SizedBox(height: 10),
+                Text(
+                  tr.homeEmptyTitle,
+                  style: TextStyle(
+                    color: AppTokens.textPrimary,
+                    fontWeight: FontWeight.w800,
                   ),
-                  icon: Icons.wb_sunny_outlined,
                 ),
-                SizedBox(height: 12),
-                _AchievementCard(
-                  title: 'Plant Expert',
-                  subtitle: 'Unlocked today',
-                  colorBlob: LinearGradient(
-                    colors: [Color(0xFF34D399), Color(0xFF14B8A6)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  icon: Icons.grass_rounded,
-                ),
-                SizedBox(height: 12),
-                _AchievementCard(
-                  title: 'Week Warrior',
-                  subtitle: 'Unlocked today',
-                  colorBlob: LinearGradient(
-                    colors: [Color(0xFFFDE68A), Color(0xFFF59E0B)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  icon: Icons.flash_on_outlined,
+                const SizedBox(height: 6),
+                Text(
+                  tr.homeEmptySubtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppTokens.textSecondary),
                 ),
               ],
             ),
+          )
+        else
+          ...visibleItems.map(
+                (n) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _NewsRowCard(
+                item: n,
+                onTap: () => _openUrl(n.url),
+              ),
+            ),
           ),
 
-          const SizedBox(height: 12),
-
-          // ========= Explore the Garden =========
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: GestureDetector(
-              onTap: () {
-                showDialog(context: context, builder: (_) => const GardenMapDialog());
-              },
-              child: NeonCard(
-                gradient: AppTokens.tealGradient,
-                shadows: AppTokens.glow(AppTokens.green600, blur: 14),
-                padding: const EdgeInsets.all(18),
-                child: Row(
-                  children: const [
-                    Icon(Icons.location_on_outlined, color: Colors.white, size: 28),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text('Explore the Garden', style: AppTokens.titleWhite),
-                    ),
-                  ],
+        if (canLoadMore) ...[
+          const SizedBox(height: 4),
+          NeonCard(
+            color: AppTokens.cardSurface,
+            shadows: AppTokens.tileShadow,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    tr.homeShowingOf(shown, total),
+                    style: TextStyle(color: AppTokens.textSecondary, fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
+                TextButton(
+                  onPressed: () => _loadMore(total),
+                  child: Text(tr.homeLoadMore, style: TextStyle(color: AppTokens.emerald500)),
+                ),
+              ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/* ================== Mini-widgets ================== */
-
-class _LevelInfo extends StatelessWidget {
-  const _LevelInfo();
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(children: [
-          Text('Level 8', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
-          SizedBox(width: 6),
-        ]),
-        Text('Plant Explorer', style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
       ],
     );
   }
 }
 
-class _XpPill extends StatelessWidget {
-  final int current, total;
-  const _XpPill({required this.current, required this.total});
+/* ================== Header ================== */
+
+class _HeaderIcon extends StatelessWidget {
+  const _HeaderIcon();
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(16)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text('$current', style: const TextStyle(color: Colors.white, fontSize: 22)),
-          const SizedBox(height: 2),
-          Text('/ $total XP', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        ],
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.20),
+          borderRadius: const BorderRadius.all(Radius.circular(16)),
+        ),
+        child: const Center(
+          child: BounceGentle(
+            child: Image(
+              image: AssetImage('lib/utils/images/pine.png'),
+              width: 28,
+              height: 28,
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
-class _RowTitle extends StatelessWidget {
-  const _RowTitle();
+class _HeaderText extends StatelessWidget {
+  const _HeaderText();
+
   @override
   Widget build(BuildContext context) {
-    return Row(children: const [
-      Text('Daily Quest', style: AppTokens.h1),
-      SizedBox(width: 8),
-      NeonChip('+50 XP'),
-    ]);
+    final tr = context.tr;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          tr.homeHeaderTitle,
+          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          tr.homeHeaderSubtitle,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.78),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 }
 
 class _SectionTitle extends StatelessWidget {
-  final String title;
-  const _SectionTitle({required this.title});
+  final String text;
+  const _SectionTitle(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Text(
-      title,
-      style: const TextStyle(
+      text,
+      style: TextStyle(
         color: AppTokens.textPrimary,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w800,
         fontSize: 16,
       ),
     );
   }
 }
 
-class _AchievementCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final LinearGradient colorBlob;
-  final IconData icon;
+/* ================== Otváracie hodiny ================== */
 
-  const _AchievementCard({
-    required this.title,
-    required this.subtitle,
-    required this.colorBlob,
-    required this.icon,
-  });
+/* ================== Otváracie hodiny ================== */
+
+class _OpeningHoursCard extends StatelessWidget {
+  const _OpeningHoursCard();
+
+  static const int _openHour = 9;
+  static const int _closeHour = 18;
+
+  DateTime _now() {
+    // ak máš timezone initnuté, použije sa tz.local; inak fallback na DateTime.now()
+    try {
+      return tz.TZDateTime.now(tz.local);
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
+  bool _isOpenNow(DateTime now) {
+    // Nedeľa = zatvorené
+    if (now.weekday == DateTime.sunday) return false;
+
+    final start = DateTime(now.year, now.month, now.day, _openHour, 0);
+    final end = DateTime(now.year, now.month, now.day, _closeHour, 0);
+
+    // otvorené v intervale <09:00, 18:00)
+    return !now.isBefore(start) && now.isBefore(end);
+  }
+
+  Widget _row({
+    required String day,
+    required String hours,
+    required bool highlight,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 96,
+            child: Text(
+              day,
+              style: TextStyle(
+                color: highlight ? AppTokens.textPrimary : AppTokens.textSecondary,
+                fontWeight: highlight ? FontWeight.w900 : FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              hours,
+              style: TextStyle(
+                color: highlight ? AppTokens.textPrimary : AppTokens.textSecondary,
+                fontWeight: highlight ? FontWeight.w800 : FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = context.tr;
+
+    final now = _now();
+    final openNow = _isOpenNow(now);
+    bool isToday(int weekday) => now.weekday == weekday;
+
+    const hoursOpen = '09:00 – 18:00';
+
+    final title = tr.openingHoursTitle;
+    final statusText = openNow ? tr.openingHoursNowOpen : tr.openingHoursNowClosed;
+    final note = tr.openingHoursNote;
+
+    return NeonCard(
+      color: AppTokens.cardSurface,
+      shadows: AppTokens.tileShadow,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: AppTokens.tealGradient,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                  boxShadow: AppTokens.glow(AppTokens.emerald500, blur: 10, alpha: .12),
+                ),
+                child: const Icon(Icons.schedule_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: AppTokens.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      statusText,
+                      style: TextStyle(
+                        color: openNow ? AppTokens.emerald500 : Colors.red,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Divider(color: AppTokens.divider),
+          const SizedBox(height: 6),
+
+          _row(day: tr.weekdayMon, hours: hoursOpen, highlight: isToday(DateTime.monday)),
+          _row(day: tr.weekdayTue, hours: hoursOpen, highlight: isToday(DateTime.tuesday)),
+          _row(day: tr.weekdayWed, hours: hoursOpen, highlight: isToday(DateTime.wednesday)),
+          _row(day: tr.weekdayThu, hours: hoursOpen, highlight: isToday(DateTime.thursday)),
+          _row(day: tr.weekdayFri, hours: hoursOpen, highlight: isToday(DateTime.friday)),
+          _row(day: tr.weekdaySat, hours: hoursOpen, highlight: isToday(DateTime.saturday)),
+          _row(
+            day: tr.weekdaySun,
+            hours: tr.openingHoursClosed,
+            highlight: isToday(DateTime.sunday),
+          ),
+
+          const SizedBox(height: 10),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTokens.textPrimary.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+              border: Border.all(color: AppTokens.cardBorder),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, color: AppTokens.emerald500, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    note,
+                    style: TextStyle(
+                      color: AppTokens.textSecondary,
+                      height: 1.25,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* ================== UI Cards ================== */
+
+class _TopStoryCard extends StatelessWidget {
+  final NewsItem item;
+  final VoidCallback onTap;
+
+  const _TopStoryCard({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return NeonCard(
-      color: AppTokens.cardDark,
+      color: AppTokens.cardSurface,
       shadows: AppTokens.tileShadow,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              gradient: colorBlob,
-              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-              boxShadow: AppTokens.tileShadow,
+      padding: const EdgeInsets.all(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        onTap: onTap,
+        child: Row(
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                gradient: AppTokens.statGreen(),
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                boxShadow: AppTokens.glow(AppTokens.emerald500, blur: 10),
+              ),
+              child: const Icon(Icons.school_rounded, color: Colors.white),
             ),
-            child: const Center(child: Icon(Icons.circle, size: 0)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Expanded(
-                    child: Text(title,
-                        style: const TextStyle(color: AppTokens.textPrimary, fontWeight: FontWeight.w600)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _TagPill(item.tag),
+                  const SizedBox(height: 6),
+                  Text(
+                    item.title,
+                    style: TextStyle(
+                      color: AppTokens.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
                   ),
-                  const Icon(Icons.star, size: 16, color: Color(0xFFFDE68A)),
-                ]),
-                const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(color: AppTokens.textSecondary)),
-              ],
+                  const SizedBox(height: 4),
+                  Text(item.subtitle, style: TextStyle(color: AppTokens.textSecondary)),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Icon(Icons.chevron_right, color: AppTokens.textSecondary),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _StatTile extends StatelessWidget {
-  final LinearGradient Function() gradient;
-  final Color shadowSeed;
-  final IconData icon;
-  final String number;
-  final String label;
-  final Color numberColor;
-  final Color labelColor;
+class _NewsRowCard extends StatelessWidget {
+  final NewsItem item;
+  final VoidCallback onTap;
 
-  const _StatTile({
-    required this.gradient,
-    required this.shadowSeed,
-    required this.icon,
-    required this.number,
-    required this.label,
-    required this.numberColor,
-    required this.labelColor,
-  });
+  const _NewsRowCard({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return NeonCard(
+      color: AppTokens.cardSurface,
+      shadows: AppTokens.tileShadow,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        onTap: onTap,
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppTokens.textPrimary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                border: Border.all(color: AppTokens.cardBorder),
+              ),
+              child: Icon(Icons.article_outlined, color: AppTokens.textSecondary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppTokens.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: AppTokens.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppTokens.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TagPill extends StatelessWidget {
+  final String text;
+  const _TagPill(this.text);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 104,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTokens.cardDark,
-        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        color: AppTokens.textPrimary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppTokens.cardBorder),
-        boxShadow: AppTokens.glow(shadowSeed, blur: 12),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-      child: Column(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: gradient(),
-              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-              boxShadow: AppTokens.glow(shadowSeed, blur: 10),
-            ),
-            child: Center(child: BounceGentle(child: Icon(icon, color: Colors.white, size: 22))),
-          ),
-          const SizedBox(height: 8),
-          Text(number, style: TextStyle(color: numberColor, fontWeight: FontWeight.w700, fontSize: 18)),
-          Text(label, style: TextStyle(color: labelColor, fontSize: 12)),
-          const SizedBox(height: 0),
-        ],
+      child: Text(
+        text,
+        style: TextStyle(
+          color: AppTokens.textPrimary,
+          fontWeight: FontWeight.w800,
+          fontSize: 11,
+        ),
       ),
     );
   }
 }
 
-/* ============== Garden Map Dialog (svetlý pastel tyrkys-modrý) ============== */
+/* ================== Skeleton ================== */
 
-class GardenMapDialog extends StatelessWidget {
-  const GardenMapDialog({super.key});
+class _SkeletonCard extends StatelessWidget {
+  final double height;
+  const _SkeletonCard({required this.height});
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(18),
+    return NeonCard(
+      color: AppTokens.cardSurface,
+      shadows: AppTokens.tileShadow,
+      padding: const EdgeInsets.all(0),
       child: Container(
+        height: height,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFE9FFF7), Color(0xFFE6F4FF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 8))],
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Garden Map', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 2),
-                const Text('Explore different zones and discover new plants',
-                    style: TextStyle(color: Color(0xFF047857))),
-                const SizedBox(height: 14),
-                Container(
-                  height: 240,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                    border: Border.all(color: AppTokens.emerald500, width: 1),
-                  ),
-                  child: const Center(child: Icon(Icons.map_outlined, size: 84, color: AppTokens.green600)),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Color(0xFFE2F7F1), width: 1),
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(Icons.touch_app_outlined, color: AppTokens.green600, size: 18),
-                      SizedBox(width: 6),
-                      Expanded(
-                        child: Text('Tap a location to view details',
-                            style: TextStyle(color: Color(0xFF047857), fontSize: 13)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: const [
-                    Icon(Icons.circle, color: AppTokens.emerald500, size: 12),
-                    SizedBox(width: 6),
-                    Text('Discovered', style: TextStyle(fontSize: 12)),
-                    SizedBox(width: 16),
-                    Icon(Icons.circle, color: Colors.grey, size: 12),
-                    SizedBox(width: 6),
-                    Text('Locked', style: TextStyle(fontSize: 12)),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('Back'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTokens.green600,
-                        side: const BorderSide(color: AppTokens.green600),
-                      ),
-                    ),
-                    const Spacer(),
-                    ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('Start Tour'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTokens.green600,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
-                )
-              ],
-            ),
-          ),
+          color: AppTokens.textPrimary.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          border: Border.all(color: AppTokens.cardBorder),
         ),
       ),
     );

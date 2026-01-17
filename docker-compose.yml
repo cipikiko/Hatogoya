@@ -13,6 +13,7 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       SECRET_KEY: supersecret
+      RATE_LIMIT_ENABLED: "0"
     depends_on:
       - postgres
     networks:
@@ -55,3 +56,4 @@ networks:
 
 volumes:
   hatogoya-db:
+  pgadmin-data:

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'forgot_password_screen.dart';
+
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
 import '../services/api_service.dart';
-import 'home_screen.dart';
 import 'register_screen.dart';
+import '../services/auth_service.dart';
+import '../main.dart';
+import '../lang/strings.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,61 +20,132 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController usernameCtrl = TextEditingController();
   final TextEditingController passwordCtrl = TextEditingController();
 
+  // ✅ DEV OFFLINE LOGIN
+  static const String _devUser = 'panic';
+  static const String _devPass = 'panic';
+
   InputDecoration _dec(String label) => InputDecoration(
     labelText: label,
-    labelStyle: const TextStyle(color: AppTokens.textSecondary),
+    labelStyle: TextStyle(color: AppTokens.textSecondary),
     filled: true,
     fillColor: AppTokens.cardDark,
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-      borderSide: const BorderSide(color: AppTokens.cardBorder),
+      borderSide: BorderSide(color: AppTokens.cardBorder),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-      borderSide:
-      const BorderSide(color: AppTokens.emerald500, width: 1.5),
+      borderSide: const BorderSide(color: AppTokens.emerald500, width: 1.5),
     ),
   );
 
-  /// 🔥 LOGIN FUNKCIA – napojená na backend (/login)
-  void handleLogin() async {
+  // ✅ RESEND VERIFICATION EMAIL
+  Future<void> resendVerificationEmail() async {
+    final email = usernameCtrl.text.trim();
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Zadaj e-mail a skús znova.")),
+      );
+      return;
+    }
+
+    final result = await ApiService.resendVerification(email);
+    if (!mounted) return;
+
+    final msg = (result["body"] is Map && result["body"]["message"] != null)
+        ? result["body"]["message"].toString()
+        : "Overovací e-mail bol odoslaný (ak účet existuje).";
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  }
+
+  Future<void> handleLogin() async {
+    final tr = context.tr;
+
     final username = usernameCtrl.text.trim();
     final password = passwordCtrl.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vyplňte všetky polia")),
+        SnackBar(content: Text(tr.loginFillAllFields)),
       );
       return;
     }
 
-    final result = await ApiService.login(username, password);
+    // ✅ OFFLINE DEV BYPASS
+    if (username.toLowerCase() == _devUser && password == _devPass) {
+      await AuthService.saveToken('DEV_TOKEN');
+      if (!mounted) return;
 
-    if (result["status"] == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Prihlásenie úspešné")),
+        SnackBar(content: Text(tr.loginDevOffline)),
       );
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const MainScreen()),
       );
-    } else {
+      return;
+    }
+
+    // Normálny login cez backend
+    final result = await ApiService.login(username, password);
+    if (!mounted) return;
+
+    if (result["status"] == 200) {
+      final body = result["body"] as Map<String, dynamic>;
+      final token = body["token"]?.toString() ?? username;
+
+      await AuthService.saveToken(token);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.loginSuccess)),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+      );
+    } else if (result["status"] == 403) {
+      // ✅ Email nie je overený + ponúkneme resend
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            result["body"]["message"] ?? "Nesprávne meno alebo heslo",
+          content: const Text("Najprv potvrď e-mail. Ak ti nič neprišlo, pošli si overenie znova."),
+          action: SnackBarAction(
+            label: "Poslať znova",
+            onPressed: resendVerificationEmail,
           ),
         ),
+      );
+    } else {
+      final msg = (result["body"] is Map && result["body"]["message"] != null)
+          ? result["body"]["message"].toString()
+          : tr.loginInvalidCreds;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
       );
     }
   }
 
   @override
+  void dispose() {
+    usernameCtrl.dispose();
+    passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Prihlásenie'),
+        title: Text(tr.loginTitle),
         foregroundColor: Colors.white,
         flexibleSpace: Container(
           decoration: BoxDecoration(gradient: AppTokens.tealGradient),
@@ -80,15 +155,10 @@ class _LoginScreenState extends State<LoginScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('Vitajte späť', style: AppTokens.h1),
+          Text(tr.loginWelcomeTitle, style: AppTokens.h1),
           const SizedBox(height: 6),
-          const Text(
-            'Prihláste sa a pokračujte v objavovaní botanickej záhrady.',
-            style: AppTokens.body,
-          ),
+          Text(tr.loginWelcomeSubtitle, style: AppTokens.body),
           const SizedBox(height: 20),
-
-          // Card
           NeonCard(
             color: AppTokens.cardDark,
             shadows: AppTokens.tileShadow,
@@ -97,23 +167,20 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 TextField(
                   controller: usernameCtrl,
-                  style: const TextStyle(color: AppTokens.textPrimary),
-                  decoration: _dec('Používateľské meno'),
+                  style: TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec(tr.loginUsernameLabel),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: passwordCtrl,
                   obscureText: true,
-                  style: const TextStyle(color: AppTokens.textPrimary),
-                  decoration: _dec('Heslo'),
+                  style: TextStyle(color: AppTokens.textPrimary),
+                  decoration: _dec(tr.loginPasswordLabel),
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 16),
-
-          // Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -126,16 +193,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                 ),
               ),
-              child: const Text(
-                'Prihlásiť sa',
-                style: TextStyle(fontSize: 16),
+              child: Text(
+                tr.loginButton,
+                style: const TextStyle(fontSize: 16),
               ),
             ),
           ),
-
           const SizedBox(height: 18),
-
-          // Prechod na registráciu
           Center(
             child: GestureDetector(
               onTap: () {
@@ -144,15 +208,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   MaterialPageRoute(builder: (_) => const RegisterScreen()),
                 );
               },
-              child: const Text.rich(
+              child: Text.rich(
                 TextSpan(
-                  text: 'Nemáte účet? ',
-                  style: TextStyle(
-                      color: AppTokens.textPrimary, fontSize: 14),
+                  text: tr.loginNoAccount,
+                  style: TextStyle(color: AppTokens.textPrimary, fontSize: 14),
                   children: [
                     TextSpan(
-                      text: 'Zaregistrujte sa',
-                      style: TextStyle(
+                      text: tr.loginGoRegister,
+                      style: const TextStyle(
                         color: AppTokens.emerald500,
                         fontWeight: FontWeight.bold,
                       ),
@@ -162,8 +225,25 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 8),
+          Center(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                );
+              },
+              child: Text(
+                tr.loginForgotPassword,
+                style: TextStyle(
+                  color: AppTokens.emerald500,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
