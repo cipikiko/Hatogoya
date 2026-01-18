@@ -1,346 +1,609 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class HomeScreen extends StatelessWidget {
+import '../theme/tokens.dart';
+import '../theme/app_theme.dart';
+import '../widgets/neon.dart';
+import 'package:timezone/timezone.dart' as tz;
+import '../models/news_item.dart';
+import '../services/news_service.dart';
+import '../services/lang_service.dart';
+import '../lang/strings.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  // paging
+  bool _seeAll = false;
+  int _visibleCount = 2;
+
+  static const String _topStoryUrl = 'https://www.arboretumbaexem.com/#education';
+
+  // refresh trigger (keď klikneš Retry)
+  int _reloadTick = 0;
+
+  Future<void> _openUrl(String url) async {
+    final tr = context.tr;
+    final uri = Uri.parse(url);
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr.homeCouldNotOpen)),
+      );
+    }
+  }
+
+  void _retry() {
+    setState(() {
+      _reloadTick++; // donúti FutureBuilder spraviť nový future
+    });
+  }
+
+  void _onSeeAllPressed(int total) {
+    setState(() {
+      _seeAll = true;
+      _visibleCount = total >= 5 ? 5 : total;
+    });
+  }
+
+  void _loadMore(int total) {
+    setState(() {
+      final next = _visibleCount + 5;
+      _visibleCount = next > total ? total : next;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+    // keď sa zmení LangService.locale, rebuildne sa aj FutureBuilder
+    return ValueListenableBuilder<Locale>(
+      valueListenable: LangService.locale,
+      builder: (context, _, __) {
+        return ValueListenableBuilder<ThemeMode>(
+          valueListenable: AppTheme.mode,
+          builder: (context, _, __) {
+            final tr = context.tr;
+            final double topPad = MediaQuery.of(context).padding.top;
+
+            final Future<List<NewsItem>> future = NewsService.fetchLatest();
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(top: topPad, bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ========= Header =========
+                  PulseGlow(
+                    color: AppTokens.green400,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: AppTokens.tealGradient,
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        ),
+                      ),
+                      padding: const EdgeInsets.fromLTRB(20, 28, 20, 18),
+                      child: Row(
+                        children: const [
+                          _HeaderIcon(),
+                          SizedBox(width: 12),
+                          _HeaderText(),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ========= Body =========
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: FutureBuilder<List<NewsItem>>(
+                      key: ValueKey('${LangService.code}-$_reloadTick'),
+                      future: future,
+                      builder: (context, snap) {
+                        final isLoading =
+                            snap.connectionState == ConnectionState.waiting ||
+                                snap.connectionState == ConnectionState.active;
+
+                        final errorMessage = snap.hasError ? tr.homeFailedLoad : null;
+
+                        final items = snap.data ?? const <NewsItem>[];
+
+                        return _buildBody(
+                          context,
+                          isLoading: isLoading,
+                          errorMessage: errorMessage,
+                          latestItems: items,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(
+      BuildContext context, {
+        required bool isLoading,
+        required String? errorMessage,
+        required List<NewsItem> latestItems,
+      }) {
+    final tr = context.tr;
+
+    if (isLoading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionTitle(tr.homeTopStory),
+          const SizedBox(height: 10),
+          const _SkeletonCard(height: 110),
+          const SizedBox(height: 16),
+
+          // ✅ aj pri loadingu ukážeme skeleton pre otváracie hodiny
+          const _SkeletonCard(height: 92),
+          const SizedBox(height: 16),
+
+          _SectionTitle(tr.homeLatest),
+          const SizedBox(height: 10),
+          const _SkeletonCard(height: 72),
+          const SizedBox(height: 12),
+          const _SkeletonCard(height: 72),
+        ],
+      );
+    }
+
+    if (errorMessage != null) {
+      return NeonCard(
+        color: AppTokens.cardSurface,
+        shadows: AppTokens.tileShadow,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: AppTokens.textSecondary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(errorMessage, style: TextStyle(color: AppTokens.textSecondary)),
+            ),
+            TextButton(
+              onPressed: _retry,
+              child: Text(tr.homeRetry, style: TextStyle(color: AppTokens.emerald500)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final total = latestItems.length;
+    final bool showSeeAll = !_seeAll && total > 2;
+
+    final int shown = _seeAll
+        ? (_visibleCount > total ? total : _visibleCount)
+        : (total >= 2 ? 2 : total);
+
+    final visibleItems = latestItems.take(shown).toList();
+    final bool canLoadMore = _seeAll && shown < total;
+
+    final topStory = NewsItem(
+      title: tr.homeTopEduTitle,
+      subtitle: tr.homeTopEduSubtitle,
+      tag: tr.homeTagFeatured,
+      url: _topStoryUrl,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(tr.homeTopStory),
+        const SizedBox(height: 10),
+        _TopStoryCard(
+          item: topStory,
+          onTap: () => _openUrl(topStory.url),
+        ),
+        const SizedBox(height: 16),
+
+        // ✅ NOVÉ: Otváracie hodiny (medzi Top príbeh a Najnovšie)
+        const _OpeningHoursCard(),
+        const SizedBox(height: 16),
+
+        Row(
+          children: [
+            Expanded(child: _SectionTitle(tr.homeLatest)),
+            if (showSeeAll)
+              TextButton(
+                onPressed: () => _onSeeAllPressed(total),
+                child: Text(tr.homeSeeAll, style: TextStyle(color: AppTokens.emerald500)),
+              )
+            else if (_seeAll)
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _seeAll = false;
+                    _visibleCount = 2;
+                  });
+                },
+                child: Text(tr.homeShowLess, style: TextStyle(color: AppTokens.emerald500)),
+              )
+          ],
+        ),
+        const SizedBox(height: 6),
+
+        if (total == 0)
+          NeonCard(
+            color: AppTokens.cardSurface,
+            shadows: AppTokens.tileShadow,
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              children: [
+                Icon(Icons.inbox_outlined, color: AppTokens.textSecondary, size: 34),
+                const SizedBox(height: 10),
+                Text(
+                  tr.homeEmptyTitle,
+                  style: TextStyle(
+                    color: AppTokens.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  tr.homeEmptySubtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppTokens.textSecondary),
+                ),
+              ],
+            ),
+          )
+        else
+          ...visibleItems.map(
+                (n) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _NewsRowCard(
+                item: n,
+                onTap: () => _openUrl(n.url),
+              ),
+            ),
+          ),
+
+        if (canLoadMore) ...[
+          const SizedBox(height: 4),
+          NeonCard(
+            color: AppTokens.cardSurface,
+            shadows: AppTokens.tileShadow,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    tr.homeShowingOf(shown, total),
+                    style: TextStyle(color: AppTokens.textSecondary, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => _loadMore(total),
+                  child: Text(tr.homeLoadMore, style: TextStyle(color: AppTokens.emerald500)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/* ================== Header ================== */
+
+class _HeaderIcon extends StatelessWidget {
+  const _HeaderIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 56,
+      height: 56,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.20),
+          borderRadius: const BorderRadius.all(Radius.circular(16)),
+        ),
+        child: const Center(
+          child: BounceGentle(
+            child: Image(
+              image: AssetImage('lib/utils/images/pine.png'),
+              width: 28,
+              height: 28,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderText extends StatelessWidget {
+  const _HeaderText();
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = context.tr;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          tr.homeHeaderTitle,
+          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          tr.homeHeaderSubtitle,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.78),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: AppTokens.textPrimary,
+        fontWeight: FontWeight.w800,
+        fontSize: 16,
+      ),
+    );
+  }
+}
+
+/* ================== Otváracie hodiny ================== */
+
+/* ================== Otváracie hodiny ================== */
+
+class _OpeningHoursCard extends StatelessWidget {
+  const _OpeningHoursCard();
+
+  static const int _openHour = 9;
+  static const int _closeHour = 18;
+
+  DateTime _now() {
+    // ak máš timezone initnuté, použije sa tz.local; inak fallback na DateTime.now()
+    try {
+      return tz.TZDateTime.now(tz.local);
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
+  bool _isOpenNow(DateTime now) {
+    // Nedeľa = zatvorené
+    if (now.weekday == DateTime.sunday) return false;
+
+    final start = DateTime(now.year, now.month, now.day, _openHour, 0);
+    final end = DateTime(now.year, now.month, now.day, _closeHour, 0);
+
+    // otvorené v intervale <09:00, 18:00)
+    return !now.isBefore(start) && now.isBefore(end);
+  }
+
+  Widget _row({
+    required String day,
+    required String hours,
+    required bool highlight,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 96,
+            child: Text(
+              day,
+              style: TextStyle(
+                color: highlight ? AppTokens.textPrimary : AppTokens.textSecondary,
+                fontWeight: highlight ? FontWeight.w900 : FontWeight.w800,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              hours,
+              style: TextStyle(
+                color: highlight ? AppTokens.textPrimary : AppTokens.textSecondary,
+                fontWeight: highlight ? FontWeight.w800 : FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tr = context.tr;
+
+    final now = _now();
+    final openNow = _isOpenNow(now);
+    bool isToday(int weekday) => now.weekday == weekday;
+
+    const hoursOpen = '09:00 – 18:00';
+
+    final title = tr.openingHoursTitle;
+    final statusText = openNow ? tr.openingHoursNowOpen : tr.openingHoursNowClosed;
+    final note = tr.openingHoursNote;
+
+    return NeonCard(
+      color: AppTokens.cardSurface,
+      shadows: AppTokens.tileShadow,
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Welcome back, Explorer!',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Continue your botanical journey',
-            style: TextStyle(fontSize: 15, color: AppColors.textGrey),
-          ),
-          const SizedBox(height: 25),
-
-          // 🌿 Gradient Level Card
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 6,
-                  offset: const Offset(0, 4),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: AppTokens.tealGradient,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                  boxShadow: AppTokens.glow(AppTokens.emerald500, blur: 10, alpha: .12),
                 ),
-              ],
-            ),
-            padding: const EdgeInsets.all(18),
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: const Icon(Icons.schedule_rounded, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.eco, color: Colors.white, size: 22),
-                        ),
-                        SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Level 8',
-                              style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500),
-                            ),
-                            Text(
-                              'Plant Explorer',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
                     Text(
-                      '340 / 500 XP',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                      title,
+                      style: TextStyle(
+                        color: AppTokens.textPrimary,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      statusText,
+                      style: TextStyle(
+                        color: openNow ? AppTokens.emerald500 : Colors.red,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12.5,
+                      ),
                     ),
                   ],
                 ),
-                SizedBox(height: 12),
-                LinearProgressIndicator(
-                  value: 340 / 500,
-                  backgroundColor: Colors.white24,
-                  color: Colors.white,
-                  minHeight: 6,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          // 📊 Stats Cards
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              _StatCard(
-                icon: Icons.local_fire_department,
-                iconColor: Color(0xFFFFA726),
-                value: '12',
-                label: 'Day Streak',
-              ),
-              _StatCard(
-                icon: Icons.eco,
-                iconColor: Color(0xFF66BB6A),
-                value: '47',
-                label: 'Plants',
-              ),
-              _StatCard(
-                icon: Icons.workspace_premium_rounded,
-                iconColor: Color(0xFFBA68C8),
-                value: '23',
-                label: 'Badges',
               ),
             ],
-          ),
-
-          const SizedBox(height: 30),
-
-          // 🪴 Daily Quest
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 3))
-              ],
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Daily Quest',
-                      style:
-                      TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.accentYellow.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        '+50 XP',
-                        style: TextStyle(
-                            color: AppColors.accentYellow,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                const Text('Discover 3 New Plants',
-                    style: TextStyle(color: Colors.black87)),
-                const SizedBox(height: 12),
-                LinearProgressIndicator(
-                  value: 1 / 3,
-                  backgroundColor: Colors.grey[300],
-                  color: AppColors.primaryGreen,
-                  minHeight: 5,
-                ),
-                const SizedBox(height: 4),
-                const Align(
-                    alignment: Alignment.centerRight,
-                    child: Text('Progress 1/3',
-                        style:
-                        TextStyle(color: Colors.black54, fontSize: 12))),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 30),
-
-          const Text(
-            'Recent Achievements',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           const SizedBox(height: 12),
+          Divider(color: AppTokens.divider),
+          const SizedBox(height: 6),
 
-          const _AchievementCard(
-            title: 'Early Bird',
-            subtitle: 'Unlocked today',
-            icon: Icons.wb_sunny_outlined,
-            color: Color(0xFFFFCC80),
+          _row(day: tr.weekdayMon, hours: hoursOpen, highlight: isToday(DateTime.monday)),
+          _row(day: tr.weekdayTue, hours: hoursOpen, highlight: isToday(DateTime.tuesday)),
+          _row(day: tr.weekdayWed, hours: hoursOpen, highlight: isToday(DateTime.wednesday)),
+          _row(day: tr.weekdayThu, hours: hoursOpen, highlight: isToday(DateTime.thursday)),
+          _row(day: tr.weekdayFri, hours: hoursOpen, highlight: isToday(DateTime.friday)),
+          _row(day: tr.weekdaySat, hours: hoursOpen, highlight: isToday(DateTime.saturday)),
+          _row(
+            day: tr.weekdaySun,
+            hours: tr.openingHoursClosed,
+            highlight: isToday(DateTime.sunday),
           ),
-          const _AchievementCard(
-            title: 'Plant Expert',
-            subtitle: 'Unlocked today',
-            icon: Icons.grass_rounded,
-            color: Color(0xFFA5D6A7),
+
+          const SizedBox(height: 10),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTokens.textPrimary.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+              border: Border.all(color: AppTokens.cardBorder),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, color: AppTokens.emerald500, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    note,
+                    style: TextStyle(
+                      color: AppTokens.textSecondary,
+                      height: 1.25,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const _AchievementCard(
-            title: 'Week Warrior',
-            subtitle: 'Unlocked today',
-            icon: Icons.flash_on_outlined,
-            color: Color(0xFFFFF59D),
-          ),
-          const ExploreGardenCard(), // 🌿 Nová klikateľná karta
         ],
       ),
     );
   }
 }
 
-// 📊 Komponenty
-class _StatCard extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String value;
-  final String label;
+/* ================== UI Cards ================== */
 
-  const _StatCard({
-    required this.icon,
-    required this.iconColor,
-    required this.value,
-    required this.label,
-  });
+class _TopStoryCard extends StatelessWidget {
+  final NewsItem item;
+  final VoidCallback onTap;
+
+  const _TopStoryCard({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 100,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 5,
-              offset: const Offset(0, 3))
-        ],
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: iconColor, size: 30),
-          const SizedBox(height: 8),
-          Text(value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-        ],
-      ),
-    );
-  }
-}
-
-class _AchievementCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-
-  const _AchievementCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: ListTile(
-        leading: CircleAvatar(
-          radius: 20,
-          backgroundColor: color.withValues(alpha: 0.5),
-          child: Icon(icon, color: AppColors.primaryGreen),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle),
-      ),
-    );
-  }
-}
-
-// 🌿 Klikateľná karta "Explore the Garden"
-class ExploreGardenCard extends StatelessWidget {
-  const ExploreGardenCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => const GardenMapDialog(),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFFE0F7FA), // modrastá
-              Color(0xFFE8F5E9), // zelenkastá
-            ],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.3)),
-        ),
+    return NeonCard(
+      color: AppTokens.cardSurface,
+      shadows: AppTokens.tileShadow,
+      padding: const EdgeInsets.all(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        onTap: onTap,
         child: Row(
           children: [
-            const Icon(Icons.location_on_outlined,
-                color: AppColors.primaryGreen, size: 30),
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                gradient: AppTokens.statGreen(),
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                boxShadow: AppTokens.glow(AppTokens.emerald500, blur: 10),
+              ),
+              child: const Icon(Icons.school_rounded, color: Colors.white),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
+                  _TagPill(item.tag),
+                  const SizedBox(height: 6),
                   Text(
-                    'Explore the Garden',
+                    item.title,
                     style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87),
+                      color: AppTokens.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                    ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Visit new areas and discover plants',
-                    style: TextStyle(color: AppColors.textGrey),
-                  ),
+                  const SizedBox(height: 4),
+                  Text(item.subtitle, style: TextStyle(color: AppTokens.textSecondary)),
                 ],
               ),
             ),
+            const SizedBox(height: 6),
+            Icon(Icons.chevron_right, color: AppTokens.textSecondary),
           ],
         ),
       ),
@@ -348,94 +611,109 @@ class ExploreGardenCard extends StatelessWidget {
   }
 }
 
-// 🗺️ Dialóg s mapou záhrady
-class GardenMapDialog extends StatelessWidget {
-  const GardenMapDialog({super.key});
+class _NewsRowCard extends StatelessWidget {
+  final NewsItem item;
+  final VoidCallback onTap;
+
+  const _NewsRowCard({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      insetPadding: const EdgeInsets.all(20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE0F7FA), Color(0xFFE8F5E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return NeonCard(
+      color: AppTokens.cardSurface,
+      shadows: AppTokens.tileShadow,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        onTap: onTap,
+        child: Row(
           children: [
-            const Text(
-              'Garden Map',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Explore different zones and discover new plants',
-              style: TextStyle(color: AppColors.textGrey),
-            ),
-            const SizedBox(height: 20),
-
-            // 🟢 Placeholder pre mapu
             Container(
-              height: 200,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                ),
+                color: AppTokens.textPrimary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                border: Border.all(color: AppTokens.cardBorder),
               ),
-              child: const Center(
-                child: Icon(Icons.map_outlined,
-                    size: 80, color: AppColors.primaryGreen),
-              ),
+              child: Icon(Icons.article_outlined, color: AppTokens.textSecondary),
             ),
-
-            const SizedBox(height: 20),
-
-            // 🪴 Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Icon(Icons.circle, color: AppColors.primaryGreen, size: 12),
-                SizedBox(width: 5),
-                Text('Discovered', style: TextStyle(fontSize: 13)),
-                SizedBox(width: 15),
-                Icon(Icons.circle, color: Colors.grey, size: 12),
-                SizedBox(width: 5),
-                Text('Locked', style: TextStyle(fontSize: 13)),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🧭 Tlačidlá
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Back'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.play_arrow),
-                  label: const Text('Start Tour'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.white,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppTokens.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    item.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: AppTokens.textSecondary),
+                  ),
+                ],
+              ),
             ),
+            Icon(Icons.chevron_right, color: AppTokens.textSecondary),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TagPill extends StatelessWidget {
+  final String text;
+  const _TagPill(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppTokens.textPrimary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppTokens.cardBorder),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: AppTokens.textPrimary,
+          fontWeight: FontWeight.w800,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+}
+
+/* ================== Skeleton ================== */
+
+class _SkeletonCard extends StatelessWidget {
+  final double height;
+  const _SkeletonCard({required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    return NeonCard(
+      color: AppTokens.cardSurface,
+      shadows: AppTokens.tileShadow,
+      padding: const EdgeInsets.all(0),
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: AppTokens.textPrimary.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+          border: Border.all(color: AppTokens.cardBorder),
         ),
       ),
     );

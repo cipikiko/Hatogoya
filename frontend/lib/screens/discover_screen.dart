@@ -1,38 +1,106 @@
 import 'package:flutter/material.dart';
-import '../utils/app_colors.dart';
+import '../theme/tokens.dart';
+import '../widgets/neon.dart';
+import '../qr/qr.dart'; // QR skener + handler
+import '../lang/strings.dart';
 
-class DiscoverScreen extends StatelessWidget {
+// 🔹 Tvoj kompletný zoznam rastlín
+final List<Map<String, String>> allPlants = [
+  {"name": "Cornus controversa 'Variegata'", "assetPath": "lib/utils/plants/Cornus controversa.jpg"},
+  {"name": "Sciadopitys verticillata 'Wiel's Beauty'", "assetPath": "lib/utils/plants/Sciadopitys verticillata Wiel’s Beauty.jpg"},
+  {"name": "Cedrus atlantica 'Glauca'", "assetPath": "lib/utils/plants/Cedrus atlantica Glauca.jpg"},
+  {"name": "Camellia japonica", "assetPath": "lib/utils/plants/Camellia japonica.jpg"},
+  {"name": "Ginkgo biloba 'China Pendula'", "assetPath": "lib/utils/plants/Ginkgo biloba China Pendula.jpg"},
+  {"name": "Acer japonica 'Orange Dream'", "assetPath": "lib/utils/plants/Acer japonica Orange Dream.jpg"},
+  {"name": "Ginkgo biloba 'Mariken'", "assetPath": "lib/utils/plants/Ginkgo biloba Mariken.jpg"},
+  {"name": "Cedrus deodara 'Aurea'", "assetPath": "lib/utils/plants/Cedrus deodara Aurea.jpg"},
+  {"name": "Cedrus atlantica 'Glauca Pendula'", "assetPath": "lib/utils/plants/Cedrus atlantica Glauca Pendula.jpg"},
+  {"name": "Sequoiadendron giganteum", "assetPath": "lib/utils/plants/Sequoiadendron giganteum.jpg"},
+  {"name": "Sequoia sempervirens 'Loma Prieta Spike'", "assetPath": "lib/utils/plants/Sequoia sempervirens Loma Prieta Spike.jpg"},
+  {"name": "Pinus sabiniana 'Isabella'", "assetPath": "lib/utils/plants/Pinus sabiniana Isabella.JPG"},
+  {"name": "Cornus × venus", "assetPath": "lib/utils/plants/Cornus kousa Venus.jpg"},
+  {"name": "Liquidambar styraciflua", "assetPath": "lib/utils/plants/Liquidambar styraciflua.jpg"},
+  {"name": "Magnolia × 'Coral Lake'", "assetPath": "lib/utils/plants/Magnolia × Coral Lake.JPG"},
+  {"name": "Magnolia grandiflora 'Kay Parris'", "assetPath": "lib/utils/plants/Magnolia grandiflora Kay Parris.JPG"},
+  {"name": "Pinus nigra", "assetPath": "lib/utils/plants/Pinus nigra.jpg"},
+  {"name": "Liriodendron tulipifera", "assetPath": "lib/utils/plants/Liriodendron tulipifera.jpg"},
+  {"name": "Sequoia sempervirens Winter Blue", "assetPath": "lib/utils/plants/Sequoia sempervirens Winter Blue.jpg"},
+  {"name": "Abies koreana 'Kosmos'", "assetPath": "lib/utils/plants/Abies koreana Kosmos.jpg"},
+  {"name": "Sequoia sempervirens Xeno", "assetPath": "lib/utils/plants/Sequoia sempervirens Xeno.jpg"},
+  {"name": "Abies vejarii 'Mountain Blue'", "assetPath": "lib/utils/plants/Abies vejarii ‘Mountain Blue’.jpg"},
+  {"name": "Magnolia denudata 'Yellow River'", "assetPath": "lib/utils/plants/Magnolia denudata ‘Yellow River’.jpg"},
+  {"name": "Fagus sylvatica 'Black Swan'", "assetPath": "lib/utils/plants/Fagus sylvatica ‘Black Swan’.jpg"},
+  {"name": "Quercus frainetto", "assetPath": "lib/utils/plants/Quercus frainetto.jpg"},
+  {"name": "Platanus × acerifolia", "assetPath": "lib/utils/plants/Platanus × acerifolia.jpg"},
+];
+
+class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
 
   @override
+  State<DiscoverScreen> createState() => _DiscoverScreenState();
+}
+
+class _DiscoverScreenState extends State<DiscoverScreen> {
+  // dynamické pre používateľa
+  final List<String> lastCollected = [];
+  int foundPlants = 0;
+
+  void _onPlantScanned(String plantName) {
+    // ✅ Podmienka: ak rastlina nie je v zozname všetkých 26, ignorujeme kód
+    if (!allPlants.any((p) => p["name"] == plantName)) return;
+
+    setState(() {
+      // iba ak ešte nebola rastlina naskenovaná
+      if (!lastCollected.contains(plantName)) {
+        foundPlants++;
+
+        lastCollected.add(plantName);
+
+        // ✅ Zobraziť iba posledné 3 rastliny
+        if (lastCollected.length > 3) {
+          lastCollected.removeAt(0);
+        }
+      }
+    });
+  }
+
+
+  @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+
+    final totalPlants = allPlants.length;
+    final progress = totalPlants == 0 ? 0.0 : foundPlants / totalPlants;
+    final percent = (progress * 100).round();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Discover Plants',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
+          Text(tr.discoverTitle, style: AppTokens.h1),
           const SizedBox(height: 4),
-          const Text(
-            'Explore and collect botanical species',
-            style: TextStyle(color: AppColors.textGrey),
-          ),
+          Text(tr.discoverSubtitle, style: AppTokens.body),
           const SizedBox(height: 20),
 
           // 🔍 Search Bar
           TextField(
+            style: TextStyle(color: AppTokens.textPrimary),
             decoration: InputDecoration(
-              hintText: 'Search plants...',
-              prefixIcon: const Icon(Icons.search),
+              hintText: tr.discoverSearchHint,
+              hintStyle: TextStyle(color: AppTokens.textSecondary),
+              prefixIcon: Icon(Icons.search, color: AppTokens.textSecondary),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AppTokens.cardDark,
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                borderSide: BorderSide(color: AppTokens.cardBorder),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                borderSide: const BorderSide(color: AppTokens.emerald500),
               ),
             ),
           ),
@@ -41,92 +109,78 @@ class DiscoverScreen extends StatelessWidget {
 
           // 🌿 Scan Button
           GestureDetector(
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (context) => const ScanPlantDialog(),
-              );
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primaryGreen, AppColors.secondaryGreen],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 3),
+            onTap: () async {
+              final scanned = await Navigator.push<String>(
+                context,
+                MaterialPageRoute(
+                  builder: (ctx) => ScannerPage(
+                    onScan: (code) => handleScan(ctx, code),
                   ),
-                ],
-              ),
-              child: const Row(
+                ),
+              );
+              if (scanned != null) _onPlantScanned(scanned);
+            },
+            child: NeonCard(
+              gradient: AppTokens.tealGradient,
+              shadows: AppTokens.glow(AppTokens.green400, blur: 18),
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              radius: AppTokens.radiusMd,
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.document_scanner_outlined,
-                      color: Colors.white, size: 22),
-                  SizedBox(width: 10),
-                  Column(
-                    children: [
-                      Text('Scan a Plant',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold)),
-                      Text('Use your camera to identify plants',
-                          style:
-                          TextStyle(color: Colors.white70, fontSize: 12)),
-                    ],
+                  const Icon(Icons.document_scanner_outlined, color: Colors.white, size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(tr.discoverScanTitle, style: AppTokens.titleWhite),
+                        const SizedBox(height: 2),
+                        Text(
+                          tr.discoverScanSubtitle,
+                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
 
+
           const SizedBox(height: 25),
 
           // 📊 Collection Progress
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 3))
-              ],
-            ),
-            padding: const EdgeInsets.all(14),
+          NeonCard(
+            color: AppTokens.cardDark,
+            shadows: AppTokens.tileShadow,
+            radius: AppTokens.radiusMd,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Your Collection',
-                    style:
-                    TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 6),
-                LinearProgressIndicator(
-                  value: 0.39,
-                  backgroundColor: Colors.grey[300],
-                  color: AppColors.primaryGreen,
-                  minHeight: 6,
+                Text(
+                  tr.discoverCollectionTitle,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppTokens.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                const Row(
+                GradientProgressBar(value: progress, height: 8),
+                const SizedBox(height: 8),
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('47 of 120 plants discovered',
-                        style: TextStyle(fontSize: 13, color: Colors.black54)),
-                    Text('39% Complete',
+                    Text("$foundPlants / $totalPlants",
+                        style: TextStyle(fontSize: 13, color: AppTokens.textSecondary)),
+                    Text("$percent%",
                         style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primaryGreen)),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTokens.emerald500,
+                        )),
                   ],
                 ),
               ],
@@ -135,273 +189,59 @@ class DiscoverScreen extends StatelessWidget {
 
           const SizedBox(height: 30),
 
-          const Text('Plant Collection',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(
+            tr.discoverLastCollected,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: AppTokens.textPrimary,
+            ),
+          ),
           const SizedBox(height: 10),
 
-          // 🪴 Rastliny (bez obrázkov)
-          const PlantCard(
-            name: 'Monstera Deliciosa',
-            subtitle: 'Monstera deliciosa',
-            rarity: 'Common',
-            zone: 'Tropical Zone A',
-            tagColor: Color(0xFFA5D6A7),
+          Column(
+            children: lastCollected.map((name) {
+              // 🔍 nájdi rastlinu podľa názvu
+              final plant = allPlants.firstWhere(
+                    (p) => p["name"] == name,
+              );
+
+              return NeonCard(
+                color: AppTokens.cardDark,
+                shadows: AppTokens.tileShadow,
+                radius: AppTokens.radiusMd,
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  children: [
+                    // 🌿 obrázok rastliny
+                    Image.asset(
+                      plant["assetPath"]!,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    // 📛 názov rastliny
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppTokens.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
           ),
-          const PlantCard(
-            name: 'Succulent Collection',
-            subtitle: 'Various species',
-            rarity: 'Uncommon',
-            zone: 'Desert Garden',
-            tagColor: Color(0xFF81D4FA),
-          ),
-          const PlantCard(
-            name: 'Garden Flowers',
-            subtitle: 'Mixed varieties',
-            rarity: 'Common',
-            zone: 'Rose Garden',
-            tagColor: Color(0xFFA5D6A7),
-          ),
-          const PlantLockedCard(rarity: 'Rare', color: Color(0xFFCE93D8)),
-          const PlantLockedCard(rarity: 'Epic', color: Color(0xFFFFCC80)),
+
         ],
       ),
     );
-  }
-}
-
-// 🌿 Plant Card bez obrázku
-class PlantCard extends StatelessWidget {
-  final String name;
-  final String subtitle;
-  final String rarity;
-  final String zone;
-  final Color tagColor;
-
-  const PlantCard({
-    super.key,
-    required this.name,
-    required this.subtitle,
-    required this.rarity,
-    required this.zone,
-    required this.tagColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // 📦 Placeholder namiesto obrázka
-            Container(
-              width: 55,
-              height: 55,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: const Center(
-                child: Text(
-                  'Obr.',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // 🌿 Textová časť
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 15)),
-                  Text(subtitle,
-                      style: const TextStyle(
-                          fontStyle: FontStyle.italic,
-                          color: Colors.black87)),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: tagColor.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          rarity,
-                          style: TextStyle(
-                            color: tagColor.darken(),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(zone,
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.black54)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// 🌱 Locked plant card
-class PlantLockedCard extends StatelessWidget {
-  final String rarity;
-  final Color color;
-
-  const PlantLockedCard({
-    super.key,
-    required this.rarity,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 1,
-      child: ListTile(
-        leading: const Icon(Icons.lock_outline, size: 40, color: Colors.grey),
-        title: const Text('???',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        subtitle: const Text('Not discovered yet',
-            style: TextStyle(color: Colors.black54)),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            rarity,
-            style: TextStyle(
-              color: color.darken(),
-              fontWeight: FontWeight.w500,
-              fontSize: 12,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// 📸 Dialog pre skenovanie
-class ScanPlantDialog extends StatelessWidget {
-  const ScanPlantDialog({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      insetPadding: const EdgeInsets.all(20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.all(Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Scan a Plant',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            const Text(
-              'Take a photo or upload an image to identify plants in the garden',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textGrey),
-            ),
-            const SizedBox(height: 20),
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(12),
-                color: Colors.grey[50],
-              ),
-              child: const Center(
-                child: Icon(Icons.camera_alt_outlined,
-                    size: 50, color: Colors.grey),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.camera_alt_outlined),
-                  label: const Text('Take Photo'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.upload_file_outlined),
-                  label: const Text('Upload'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 15),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.lightBlue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.lightbulb_outline,
-                      color: Colors.amber, size: 20),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Tip: Point your camera at a plant in the garden for instant identification and information.',
-                      style: TextStyle(
-                          fontSize: 12, color: AppColors.textGrey, height: 1.3),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// 🌈 Pomocná funkcia na stmavenie farby
-extension ColorShade on Color {
-  Color darken([double amount = .1]) {
-    assert(amount >= 0 && amount <= 1);
-    final hsl = HSLColor.fromColor(this);
-    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
-    return hslDark.toColor();
   }
 }

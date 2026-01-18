@@ -1,9 +1,0 @@
-path,split,label
-/mnt/c/Users/Propagandalf_The_Red/Pictures/test1.jpg,train,cat
-/mnt/c/Users/Propagandalf_The_Red/Pictures/test2.jpg,train,cat
-/mnt/c/Users/Propagandalf_The_Red/Pictures/test3.jpg,train,dog
-/mnt/c/Users/Propagandalf_The_Red/Pictures/test4.jpg,val,cat
-/mnt/c/Users/Propagandalf_The_Red/Pictures/test5.jpg,val,dog
-/mnt/c/Users/Propagandalf_The_Red/Pictures/test6.jpg,test,cat
-/mnt/c/Users/Propagandalf_The_Red/Pictures/test7.jpg,test,cat
-/mnt/c/Users/Propagandalf_The_Red/Pictures/test8.jpg,test,cat
