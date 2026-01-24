@@ -29,6 +29,10 @@ class _ScannerPageState extends State<ScannerPage> {
 
   bool _busy = false;
 
+  DateTime? _lastScanAt;
+
+  static const Duration _scanCooldown = Duration(seconds: 1);
+
   @override
   void dispose() {
     _controller.dispose();
@@ -36,16 +40,28 @@ class _ScannerPageState extends State<ScannerPage> {
   }
 
   Future<void> _onDetect(BarcodeCapture capture) async {
+    final now = DateTime.now();
+
+    if (_lastScanAt != null &&
+        now.difference(_lastScanAt!) < _scanCooldown) {
+      return;
+    }
+
     if (_busy) return;
     if (capture.barcodes.isEmpty) return;
 
     final code = capture.barcodes.first.rawValue;
     if (code == null || code.isEmpty) return;
 
+    _lastScanAt = now;
+
     setState(() => _busy = true);
+
     try {
       final result = await widget.onScan(code);
+
       if (!mounted) return;
+
       if (widget.closeAfterSuccess) {
         Navigator.of(context).pop(result);
       } else {
@@ -55,6 +71,7 @@ class _ScannerPageState extends State<ScannerPage> {
       }
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
       );
@@ -71,11 +88,10 @@ class _ScannerPageState extends State<ScannerPage> {
         children: [
           MobileScanner(
             controller: _controller,
-            onDetect: _onDetect, // v mobile_scanner 7.x je typ BarcodeCapture
+            onDetect: _onDetect,
             fit: BoxFit.cover,
           ),
 
-          // horná lišta
           SafeArea(
             child: Row(
               children: [
@@ -102,7 +118,6 @@ class _ScannerPageState extends State<ScannerPage> {
             ),
           ),
 
-          // jednoduchý rámik v strede
           Center(
             child: Container(
               width: MediaQuery.of(context).size.width * 0.7,
