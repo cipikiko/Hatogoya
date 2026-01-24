@@ -257,4 +257,12 @@ const Map<String, String> stringsSk = {
       'Môžeš použiť virtuálneho panáčika na simuláciu polohy a testovanie trás.',
 
   'web_education_title': 'Vzdelávanie',
+  'scan_login_first': 'Najprv sa prihlás.',
+  'common_discovered': 'Objavené',
+
+  'api_unexpected_response_format': 'Nečakaný formát odpovede (nie je JSON objekt).',
+  'api_qr_not_ours': 'Toto nie je náš QR kód.',
+  'api_scan_failed': 'Sken sa nepodaril.',
+  'api_profile_load_failed': 'Nepodarilo sa načítať profil.',
+
 };

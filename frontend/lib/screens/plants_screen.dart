@@ -1,22 +1,13 @@
-// plants_screen.dart
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../data/plants_data.dart' as data;
+import '../game/plant_dialog.dart' as dialog;
+import '../lang/strings.dart';
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
-import '../lang/strings.dart';
 
-class PlantItem {
-  final int id; // 1..28
-  final String name;
-  final String assetPath;
-
-  const PlantItem({
-    required this.id,
-    required this.name,
-    required this.assetPath,
-  });
-}
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
 
 enum SortMode { original, az, za }
 
@@ -36,139 +27,8 @@ class _PlantsScreenState extends State<PlantsScreen> {
 
   bool _showScrollTop = false;
 
-  final List<PlantItem> _plants = const [
-    PlantItem(
-      id: 1,
-      name: "Cornus controversa 'Variegata'",
-      assetPath: "lib/utils/plants/Cornus controversa.jpg",
-    ),
-    PlantItem(
-      id: 2,
-      name: "Sciadopitys verticillata 'Wiel's Beauty'",
-      assetPath: "lib/utils/plants/Sciadopitys verticillata Wiel’s Beauty.jpg",
-    ),
-    PlantItem(
-      id: 3,
-      name: "Cedrus atlantica 'Glauca'",
-      assetPath: "lib/utils/plants/Cedrus atlantica Glauca.jpg",
-    ),
-    PlantItem(
-      id: 4,
-      name: "Camellia japonica",
-      assetPath: "lib/utils/plants/Camellia japonica.jpg",
-    ),
-    PlantItem(
-      id: 5,
-      name: "Ginkgo biloba 'China Pendula'",
-      assetPath: "lib/utils/plants/Ginkgo biloba China Pendula.jpg",
-    ),
-    PlantItem(
-      id: 6,
-      name: "Acer japonica 'Orange Dream'",
-      assetPath: "lib/utils/plants/Acer japonica Orange Dream.jpg",
-    ),
-    PlantItem(
-      id: 7,
-      name: "Ginkgo biloba 'Mariken'",
-      assetPath: "lib/utils/plants/Ginkgo biloba Mariken.jpg",
-    ),
-    PlantItem(
-      id: 8,
-      name: "Cedrus deodara 'Aurea'",
-      assetPath: "lib/utils/plants/Cedrus deodara Aurea.jpg",
-    ),
-    PlantItem(
-      id: 9,
-      name: "Cedrus atlantica 'Glauca Pendula'",
-      assetPath: "lib/utils/plants/Cedrus atlantica Glauca Pendula.jpg",
-    ),
-    PlantItem(
-      id: 10,
-      name: "Sequoiadendron giganteum",
-      assetPath: "lib/utils/plants/Sequoiadendron giganteum.jpg",
-    ),
-    PlantItem(
-      id: 11,
-      name: "Sequoia sempervirens 'Loma Prieta Spike'",
-      assetPath: "lib/utils/plants/Sequoia sempervirens Loma Prieta Spike.jpg",
-    ),
-    PlantItem(
-      id: 12,
-      name: "Pinus sabiniana 'Isabella'",
-      assetPath: "lib/utils/plants/Pinus sabiniana Isabella.JPG",
-    ),
-    PlantItem(
-      id: 13,
-      name: "Cornus × venus",
-      assetPath: "lib/utils/plants/Cornus kousa Venus.jpg",
-    ),
-    PlantItem(
-      id: 14,
-      name: "Liquidambar styraciflua",
-      assetPath: "lib/utils/plants/Liquidambar styraciflua.jpg",
-    ),
-    PlantItem(
-      id: 15,
-      name: "Magnolia × 'Coral Lake'",
-      assetPath: "lib/utils/plants/Magnolia × Coral Lake.JPG",
-    ),
-    PlantItem(
-      id: 16,
-      name: "Magnolia grandiflora 'Kay Parris'",
-      assetPath: "lib/utils/plants/Magnolia grandiflora Kay Parris.JPG",
-    ),
-    PlantItem(
-      id: 17,
-      name: "Pinus nigra",
-      assetPath: "lib/utils/plants/Pinus nigra.jpg",
-    ),
-    PlantItem(
-      id: 18,
-      name: "Liriodendron tulipifera",
-      assetPath: "lib/utils/plants/Liriodendron tulipifera.jpg",
-    ),
-    PlantItem(
-      id: 19,
-      name: "Sequoia sempervirens Winter Blue",
-      assetPath: "lib/utils/plants/Sequoia sempervirens Winter Blue.jpg",
-    ),
-    PlantItem(
-      id: 20,
-      name: "Abies koreana 'Kosmos'",
-      assetPath: "lib/utils/plants/Abies koreana Kosmos.jpg",
-    ),
-    PlantItem(
-      id: 21,
-      name: "Sequoia sempervirens Xeno",
-      assetPath: "lib/utils/plants/Sequoia sempervirens Xeno.jpg",
-    ),
-    PlantItem(
-      id: 22,
-      name: "Abies vejarii 'Mountain Blue'",
-      assetPath: "lib/utils/plants/Abies vejarii ‘Mountain Blue’.jpg",
-    ),
-    PlantItem(
-      id: 23,
-      name: "Magnolia denudata 'Yellow River'",
-      assetPath: "lib/utils/plants/Magnolia denudata ‘Yellow River’.jpg",
-    ),
-    PlantItem(
-      id: 24,
-      name: "Fagus sylvatica 'Black Swan'",
-      assetPath: "lib/utils/plants/Fagus sylvatica ‘Black Swan’.jpg",
-    ),
-    PlantItem(
-      id: 25,
-      name: "Quercus frainetto",
-      assetPath: "lib/utils/plants/Quercus frainetto.jpg",
-    ),
-    PlantItem(
-      id: 26,
-      name: "Platanus × acerifolia",
-      assetPath: "lib/utils/plants/Platanus × acerifolia.jpg",
-    ),
-  ];
-
+  bool _loading = true;
+  Set<int> _discoveredIds = <int>{}; // ✅ tu budú ID objavených rastlín
 
   @override
   void initState() {
@@ -180,6 +40,33 @@ class _PlantsScreenState extends State<PlantsScreen> {
         setState(() => _showScrollTop = shouldShow);
       }
     });
+
+    _init();
+  }
+
+  Future<void> _init() async {
+    final token = await AuthService.getToken();
+
+    // Ak nie je prihlásený user, len vypni loading a zobraz bez fajok
+    if (token == null) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      return;
+    }
+
+    try {
+      final prof = await ApiService.getProfile(context, token);
+      final ids = List<int>.from(prof['discoveredPlantIds'] ?? const []);
+      if (!mounted) return;
+      setState(() {
+        _discoveredIds = ids.toSet();
+        _loading = false;
+      });
+    } catch (_) {
+      // fallback: nepadni celú obrazovku
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
   }
 
   @override
@@ -189,22 +76,11 @@ class _PlantsScreenState extends State<PlantsScreen> {
     super.dispose();
   }
 
-  // ✅ EN Wikipedia (Search) - vždy funguje
-  String _wikiUrlForSearch(String plantName) {
-    final q = plantName.trim().replaceAll('×', 'x');
-    return 'https://en.wikipedia.org/wiki/Special:Search?search=${Uri.encodeComponent(q)}';
-  }
-
-  Future<void> _openUrl(String url) async {
-    final tr = context.tr;
-    final uri = Uri.parse(url);
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr.plantsCouldNotOpenLink)),
-      );
-    }
-  }
+  dialog.PlantItem _toDialogPlant(data.PlantItem p) => dialog.PlantItem(
+    id: p.id,
+    name: p.name,
+    assetPath: p.assetPath,
+  );
 
   Widget _plantImage(
       String assetPath, {
@@ -233,106 +109,6 @@ class _PlantsScreenState extends State<PlantsScreen> {
     );
   }
 
-  void _showPlantDialog(PlantItem plant) {
-    final wikiUrl = _wikiUrlForSearch(plant.name);
-    final tr = context.tr;
-
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (ctx) {
-        final onPrimary = AppTokens.textPrimary;
-        final secondary = AppTokens.textSecondary;
-
-        return Dialog(
-          insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
-          backgroundColor: Colors.transparent,
-          child: NeonCard(
-            color: AppTokens.cardDark,
-            shadows: AppTokens.tileShadow,
-            radius: 18,
-            padding: const EdgeInsets.all(18),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 640),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            plant.name,
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: onPrimary,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.of(ctx).pop(),
-                          icon: Icon(Icons.close, color: secondary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Container(
-                      width: double.infinity,
-                      height: 260,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppTokens.cardBorder),
-                      ),
-                      child: _plantImage(
-                        plant.assetPath,
-                        width: double.infinity,
-                        height: 260,
-                        radius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      tr.plantDescription(plant.id),
-                      style: AppTokens.body.copyWith(
-                        color: secondary,
-                        height: 1.35,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    InkWell(
-                      onTap: () => _openUrl(wikiUrl),
-                      borderRadius: BorderRadius.circular(10),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.open_in_new, color: AppTokens.emerald500, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              tr.plantsOpenWikipedia,
-                              style: TextStyle(
-                                color: AppTokens.emerald500,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   void _cycleSortMode() {
     setState(() {
       _sortMode = switch (_sortMode) {
@@ -345,15 +121,15 @@ class _PlantsScreenState extends State<PlantsScreen> {
 
   String _sortLabel(Tr tr) {
     return switch (_sortMode) {
-      SortMode.original => tr.plantsSortDefault, // ✅ default text
+      SortMode.original => tr.plantsSortDefault,
       SortMode.az => tr.plantsSortAzOn,
       SortMode.za => tr.plantsSortZaOn,
     };
   }
 
-  List<PlantItem> _filteredAndSorted(List<PlantItem> list) {
+  List<data.PlantItem> _filteredAndSorted(List<data.PlantItem> list) {
     final q = _searchQuery.trim().toLowerCase();
-    var out = list.where((p) => p.name.toLowerCase().contains(q)).toList();
+    final out = list.where((p) => p.name.toLowerCase().contains(q)).toList();
 
     switch (_sortMode) {
       case SortMode.original:
@@ -381,7 +157,11 @@ class _PlantsScreenState extends State<PlantsScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
-    final filteredPlants = _filteredAndSorted(_plants);
+    final filteredPlants = _filteredAndSorted(data.plants);
+
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Stack(
       children: [
@@ -431,7 +211,6 @@ class _PlantsScreenState extends State<PlantsScreen> {
 
               const SizedBox(height: 10),
 
-              // ✅ Sort (VĽAVO)
               Align(
                 alignment: Alignment.centerLeft,
                 child: InkWell(
@@ -467,6 +246,8 @@ class _PlantsScreenState extends State<PlantsScreen> {
 
               Column(
                 children: filteredPlants.map((plant) {
+                  final discovered = _discoveredIds.contains(plant.id);
+
                   return NeonCard(
                     color: AppTokens.cardDark,
                     shadows: AppTokens.tileShadow,
@@ -475,7 +256,11 @@ class _PlantsScreenState extends State<PlantsScreen> {
                     margin: const EdgeInsets.symmetric(vertical: 6),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                      onTap: () => _showPlantDialog(plant),
+                      onTap: () => dialog.showPlantDialog(
+                        context,
+                        _toDialogPlant(plant),
+                        discovered: discovered,
+                      ),
                       child: Row(
                         children: [
                           Container(
@@ -493,6 +278,7 @@ class _PlantsScreenState extends State<PlantsScreen> {
                             ),
                           ),
                           const SizedBox(width: 12),
+
                           Expanded(
                             child: Text(
                               plant.name,
@@ -503,6 +289,25 @@ class _PlantsScreenState extends State<PlantsScreen> {
                               ),
                             ),
                           ),
+
+                          // ✅ fajka napravo, len ak objavené
+                          if (discovered) ...[
+                            const SizedBox(width: 10),
+                            Container(
+                              width: 26,
+                              height: 26,
+                              decoration: BoxDecoration(
+                                color: AppTokens.emerald500.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: AppTokens.emerald500.withValues(alpha: 0.55)),
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                size: 16,
+                                color: AppTokens.emerald500,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -513,7 +318,6 @@ class _PlantsScreenState extends State<PlantsScreen> {
           ),
         ),
 
-        // ✅ Scroll-to-top button (pravý dolný roh, až po scrolle)
         AnimatedPositioned(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOut,

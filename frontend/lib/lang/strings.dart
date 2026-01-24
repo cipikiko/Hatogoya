@@ -84,9 +84,6 @@ class Tr {
   String get profileTitle => _t('profile_title');
   String get profileSubtitle => _t('profile_subtitle');
 
-  String profileMemberSince(String monthYear) =>
-      _t('profile_member_since').replaceAll('{monthYear}', monthYear);
-
   String profileProgressPlants(int found, int total) =>
       _t('profile_progress_plants')
           .replaceAll('{found}', '$found')
@@ -257,6 +254,16 @@ class Tr {
   String get mapOffsiteBody => _t('map_offsite_body');
 
   String get webEducationTitle => _t('web_education_title');
+  String get commonDiscovered => _t('common_discovered');
+  String get scanLoginFirst => _t('scan_login_first');
+
+  String get apiUnexpectedResponseFormat => _t('api_unexpected_response_format');
+  String get apiQrNotOurs => _t('api_qr_not_ours');
+  String get apiScanFailed => _t('api_scan_failed');
+  String get apiProfileLoadFailed => _t('api_profile_load_failed');
+
+
+
 }
 
 extension TrX on BuildContext {

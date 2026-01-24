@@ -258,4 +258,13 @@ const Map<String, String> stringsEn = {
       'You can use the virtual avatar to simulate your position and test routes.',
 
   'web_education_title': 'Education',
+
+  'common_discovered': 'Discovered',
+  'scan_login_first': 'Please log in first.',
+  'api_unexpected_response_format': 'Unexpected response format (not a JSON object).',
+  'api_qr_not_ours': 'This is not our QR code.',
+  'api_scan_failed': 'Scan failed.',
+  'api_profile_load_failed': 'Failed to load profile.',
+
+
 };

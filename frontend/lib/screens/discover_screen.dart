@@ -1,21 +1,114 @@
 import 'package:flutter/material.dart';
+
+import '../data/plants_data.dart' as data;
+import '../game/plant_dialog.dart' as dialog;
+import '../lang/strings.dart';
+import '../qr/qr.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
-import '../qr/qr.dart'; // QR skener + handler
-import '../lang/strings.dart';
 
-class DiscoverScreen extends StatelessWidget {
+
+
+class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
+
+  @override
+  State<DiscoverScreen> createState() => _DiscoverScreenState();
+}
+
+class _DiscoverScreenState extends State<DiscoverScreen> {
+  int foundPlants = 0;
+  List<int> lastCollectedIds = const [];
+
+  bool _loading = true;
+  String? _token;
+
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final token = await AuthService.getToken();
+    if (!mounted) return;
+    setState(() => _token = token);
+
+    if (token != null) {
+      await _loadProfile(token);
+    }
+
+    if (!mounted) return;
+    setState(() => _loading = false);
+  }
+
+  Future<void> _loadProfile(String token) async {
+    final prof = await ApiService.getProfile(context, token);
+    if (!mounted) return;
+    setState(() {
+      foundPlants = (prof['foundCount'] as num?)?.toInt() ?? 0;
+      lastCollectedIds = List<int>.from(prof['lastPlants'] ?? const []);
+    });
+  }
+
+
+  dialog.PlantItem _toDialogPlant(data.PlantItem p) => dialog.PlantItem(
+    id: p.id,
+    name: p.name,
+    assetPath: p.assetPath,
+  );
+
+  Future<void> _startScan() async {
+    final token = _token;
+    if (token == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Najprv sa prihlás.')),
+      );
+      return;
+    }
+
+    final result = await Navigator.push<ScanResult>(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => ScannerPage(
+          onScan: (code) => handleScan(ctx, code),
+        ),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    // Update progress + recently directly from scan response
+    setState(() {
+      foundPlants = result.foundCount;
+      lastCollectedIds = result.lastPlants;
+    });
+
+    final dataPlant = data.plantById[result.plantId];
+    if (dataPlant == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Neznáma rastlina (ID mimo 1..26).')),
+      );
+      return;
+    }
+
+    await dialog.showPlantDialog(context, _toDialogPlant(dataPlant));
+  }
 
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
 
-    // demo numbers (real values later)
-    const foundPlants = 47;
-    const totalPlants = 120;
-    const progress = foundPlants / totalPlants; // 0.39...
-    final percent = (progress * 100).round(); // 39
+    final totalPlants = data.plants.length;
+    final progress = totalPlants == 0 ? 0.0 : (foundPlants / totalPlants).clamp(0.0, 1.0);
+    final percent = (progress * 100).round();
+
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
@@ -25,43 +118,12 @@ class DiscoverScreen extends StatelessWidget {
           Text(tr.discoverTitle, style: AppTokens.h1),
           const SizedBox(height: 4),
           Text(tr.discoverSubtitle, style: AppTokens.body),
-          const SizedBox(height: 20),
-
-          // 🔍 Search Bar
-          TextField(
-            style: TextStyle(color: AppTokens.textPrimary),
-            decoration: InputDecoration(
-              hintText: tr.discoverSearchHint,
-              hintStyle: TextStyle(color: AppTokens.textSecondary),
-              prefixIcon: Icon(Icons.search, color: AppTokens.textSecondary),
-              filled: true,
-              fillColor: AppTokens.cardDark,
-              contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                borderSide: BorderSide(color: AppTokens.cardBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-                borderSide: const BorderSide(color: AppTokens.emerald500),
-              ),
-            ),
-          ),
 
           const SizedBox(height: 20),
 
-          // 🌿 Scan Button (otvorí QR scanner)
+          // 🌿 Scan Button
           GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (ctx) => ScannerPage(
-                    onScan: (code) => handleScan(ctx, code),
-                  ),
-                ),
-              );
-            },
+            onTap: _startScan,
             child: NeonCard(
               gradient: AppTokens.tealGradient,
               shadows: AppTokens.glow(AppTokens.green400, blur: 18),
@@ -109,17 +171,17 @@ class DiscoverScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                const GradientProgressBar(value: progress, height: 8),
+                GradientProgressBar(value: progress, height: 8),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      tr.discoverCollectionProgress(foundPlants, totalPlants),
+                      "$foundPlants / $totalPlants",
                       style: TextStyle(fontSize: 13, color: AppTokens.textSecondary),
                     ),
                     Text(
-                      tr.discoverCollectionPercent(percent),
+                      "$percent%",
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -144,182 +206,50 @@ class DiscoverScreen extends StatelessWidget {
           ),
           const SizedBox(height: 10),
 
+          Column(
+            children: lastCollectedIds.map((id) {
+              final plant = data.plantById[id];
+              if (plant == null) return const SizedBox.shrink();
 
-        ],
-      ),
-    );
-  }
-}
-
-// 🌿 Plant Card bez obrázku (neon štýl)
-class PlantCard extends StatelessWidget {
-  final String name;
-  final String subtitle;
-  final String rarity;
-  final String zone;
-  final Color tagColor;
-
-  const PlantCard({
-    super.key,
-    required this.name,
-    required this.subtitle,
-    required this.rarity,
-    required this.zone,
-    required this.tagColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return NeonCard(
-      color: AppTokens.cardDark,
-      shadows: AppTokens.tileShadow,
-      radius: AppTokens.radiusMd,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 📦 malé „logo“ miesto obrázka
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: AppTokens.cardDark,
-              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-              border: Border.all(color: AppTokens.cardBorder),
-            ),
-            child: Center(
-              child: Icon(Icons.eco, color: AppTokens.textSecondary, size: 22),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // 🌿 Textová časť
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    color: AppTokens.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontStyle: FontStyle.italic,
-                    color: AppTokens.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
+              return NeonCard(
+                color: AppTokens.cardDark,
+                shadows: AppTokens.tileShadow,
+                radius: AppTokens.radiusMd,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(8),
+                    Image.asset(
+                      plant.assetPath,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 48,
+                        height: 48,
+                        color: AppTokens.cardDark,
+                        alignment: Alignment.center,
+                        child: Icon(Icons.image_not_supported_outlined, color: AppTokens.textSecondary),
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
                       child: Text(
-                        rarity,
+                        plant.name,
                         style: TextStyle(
-                          color: tagColor.darken(),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppTokens.textPrimary,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.location_on_outlined, size: 14, color: AppTokens.textSecondary),
-                    const SizedBox(width: 4),
-                    Text(
-                      zone,
-                      style: TextStyle(fontSize: 12, color: AppTokens.textSecondary),
-                    ),
                   ],
                 ),
-              ],
-            ),
+              );
+            }).toList(),
           ),
         ],
       ),
     );
-  }
-}
-
-// 🌱 Locked plant card (neon štýl)
-class PlantLockedCard extends StatelessWidget {
-  final String rarity;
-  final Color color;
-
-  const PlantLockedCard({
-    super.key,
-    required this.rarity,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final tr = context.tr;
-
-    return NeonCard(
-      color: AppTokens.cardDark,
-      shadows: AppTokens.tileShadow,
-      radius: AppTokens.radiusMd,
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      child: Row(
-        children: [
-          Icon(Icons.lock_outline, size: 28, color: AppTokens.textSecondary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '???',
-                  style: TextStyle(
-                    color: AppTokens.textPrimary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  tr.discoverNotDiscoveredYet,
-                  style: TextStyle(color: AppTokens.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              rarity,
-              style: TextStyle(
-                color: color.darken(),
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// 🌈 Pomocná funkcia na stmavenie farby
-extension ColorShade on Color {
-  Color darken([double amount = .1]) {
-    assert(amount >= 0 && amount <= 1);
-    final hsl = HSLColor.fromColor(this);
-    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
-    return hslDark.toColor();
   }
 }
