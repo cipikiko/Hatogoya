@@ -139,16 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          const SizedBox(height: 22),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Total visits – ak nemáš v DB, nechaj dočasne rovnaké alebo 0
-              _StatBox(label: tr.profileTotalVisits, value: '—', icon: Icons.place),
-              _StatBox(label: tr.profilePlantsFound, value: '$_foundPlants', icon: Icons.eco),
-            ],
-          ),
 
           const SizedBox(height: 28),
 
