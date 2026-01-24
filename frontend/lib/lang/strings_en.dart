@@ -104,6 +104,7 @@ const Map<String, String> stringsEn = {
   'discover_title': 'Discover Plants',
   'discover_subtitle': 'Explore and collect botanical species',
   'discover_search_hint': 'Search plants...',
+  'common_discovered': 'Discovered',
 
   'discover_scan_title': 'Scan a Plant',
   'discover_scan_subtitle': 'Use your camera to identify plants',

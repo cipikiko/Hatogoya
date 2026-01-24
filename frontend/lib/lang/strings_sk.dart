@@ -103,6 +103,7 @@ const Map<String, String> stringsSk = {
   'discover_title': 'Objavovanie rastlín',
   'discover_subtitle': 'Objavuj a zbieraj botanické druhy',
   'discover_search_hint': 'Hľadať rastliny...',
+  'common_discovered': 'Objavené',
 
   'discover_scan_title': 'Skenovať rastlinu',
   'discover_scan_subtitle': 'Použi fotoaparát na rozpoznanie rastlín',

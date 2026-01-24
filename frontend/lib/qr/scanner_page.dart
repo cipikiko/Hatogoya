@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import 'scan_handler.dart';
+
 class ScannerPage extends StatefulWidget {
   const ScannerPage({
     super.key,
@@ -9,7 +11,7 @@ class ScannerPage extends StatefulWidget {
   });
 
   /// Callback po úspešnom načítaní kódu
-  final Future<void> Function(String code) onScan;
+  final Future<ScanResult> Function(String code) onScan;
 
   /// Po úspechu zavrieť stránku so skenerom
   final bool closeAfterSuccess;
@@ -42,10 +44,10 @@ class _ScannerPageState extends State<ScannerPage> {
 
     setState(() => _busy = true);
     try {
-      await widget.onScan(code);
+      final result = await widget.onScan(code);
       if (!mounted) return;
       if (widget.closeAfterSuccess) {
-        Navigator.of(context).maybePop();
+        Navigator.of(context).pop(result);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Kód spracovaný')),

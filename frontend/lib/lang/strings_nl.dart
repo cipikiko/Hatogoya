@@ -101,6 +101,7 @@ const Map<String, String> stringsNl = {
   'discover_title': 'Ontdek planten',
   'discover_subtitle': 'Ontdek en verzamel botanische soorten',
   'discover_search_hint': 'Planten zoeken...',
+  'common_discovered': 'Ontdekt',
 
   'discover_scan_title': 'Scan een plant',
   'discover_scan_subtitle': 'Gebruik je camera om planten te herkennen',

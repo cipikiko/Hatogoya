@@ -125,6 +125,8 @@ class Tr {
   String get discoverTitle => _t('discover_title');
   String get discoverSubtitle => _t('discover_subtitle');
   String get discoverSearchHint => _t('discover_search_hint');
+  String get commonDiscovered => _t('common_discovered');
+
 
   String get discoverScanTitle => _t('discover_scan_title');
   String get discoverScanSubtitle => _t('discover_scan_subtitle');

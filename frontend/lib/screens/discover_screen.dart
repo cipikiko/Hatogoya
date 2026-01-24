@@ -1,38 +1,15 @@
 import 'package:flutter/material.dart';
+
+import '../data/plants_data.dart' as data;
+import '../game/plant_dialog.dart' as dialog;
+import '../lang/strings.dart';
+import '../qr/qr.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
-import '../qr/qr.dart'; // QR skener + handler
-import '../lang/strings.dart';
 
-// 🔹 Tvoj kompletný zoznam rastlín
-final List<Map<String, String>> allPlants = [
-  {"name": "Cornus controversa 'Variegata'", "assetPath": "lib/utils/plants/Cornus controversa.jpg"},
-  {"name": "Sciadopitys verticillata 'Wiel's Beauty'", "assetPath": "lib/utils/plants/Sciadopitys verticillata Wiel’s Beauty.jpg"},
-  {"name": "Cedrus atlantica 'Glauca'", "assetPath": "lib/utils/plants/Cedrus atlantica Glauca.jpg"},
-  {"name": "Camellia japonica", "assetPath": "lib/utils/plants/Camellia japonica.jpg"},
-  {"name": "Ginkgo biloba 'China Pendula'", "assetPath": "lib/utils/plants/Ginkgo biloba China Pendula.jpg"},
-  {"name": "Acer japonica 'Orange Dream'", "assetPath": "lib/utils/plants/Acer japonica Orange Dream.jpg"},
-  {"name": "Ginkgo biloba 'Mariken'", "assetPath": "lib/utils/plants/Ginkgo biloba Mariken.jpg"},
-  {"name": "Cedrus deodara 'Aurea'", "assetPath": "lib/utils/plants/Cedrus deodara Aurea.jpg"},
-  {"name": "Cedrus atlantica 'Glauca Pendula'", "assetPath": "lib/utils/plants/Cedrus atlantica Glauca Pendula.jpg"},
-  {"name": "Sequoiadendron giganteum", "assetPath": "lib/utils/plants/Sequoiadendron giganteum.jpg"},
-  {"name": "Sequoia sempervirens 'Loma Prieta Spike'", "assetPath": "lib/utils/plants/Sequoia sempervirens Loma Prieta Spike.jpg"},
-  {"name": "Pinus sabiniana 'Isabella'", "assetPath": "lib/utils/plants/Pinus sabiniana Isabella.JPG"},
-  {"name": "Cornus × venus", "assetPath": "lib/utils/plants/Cornus kousa Venus.jpg"},
-  {"name": "Liquidambar styraciflua", "assetPath": "lib/utils/plants/Liquidambar styraciflua.jpg"},
-  {"name": "Magnolia × 'Coral Lake'", "assetPath": "lib/utils/plants/Magnolia × Coral Lake.JPG"},
-  {"name": "Magnolia grandiflora 'Kay Parris'", "assetPath": "lib/utils/plants/Magnolia grandiflora Kay Parris.JPG"},
-  {"name": "Pinus nigra", "assetPath": "lib/utils/plants/Pinus nigra.jpg"},
-  {"name": "Liriodendron tulipifera", "assetPath": "lib/utils/plants/Liriodendron tulipifera.jpg"},
-  {"name": "Sequoia sempervirens Winter Blue", "assetPath": "lib/utils/plants/Sequoia sempervirens Winter Blue.jpg"},
-  {"name": "Abies koreana 'Kosmos'", "assetPath": "lib/utils/plants/Abies koreana Kosmos.jpg"},
-  {"name": "Sequoia sempervirens Xeno", "assetPath": "lib/utils/plants/Sequoia sempervirens Xeno.jpg"},
-  {"name": "Abies vejarii 'Mountain Blue'", "assetPath": "lib/utils/plants/Abies vejarii ‘Mountain Blue’.jpg"},
-  {"name": "Magnolia denudata 'Yellow River'", "assetPath": "lib/utils/plants/Magnolia denudata ‘Yellow River’.jpg"},
-  {"name": "Fagus sylvatica 'Black Swan'", "assetPath": "lib/utils/plants/Fagus sylvatica ‘Black Swan’.jpg"},
-  {"name": "Quercus frainetto", "assetPath": "lib/utils/plants/Quercus frainetto.jpg"},
-  {"name": "Platanus × acerifolia", "assetPath": "lib/utils/plants/Platanus × acerifolia.jpg"},
-];
+
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -42,37 +19,95 @@ class DiscoverScreen extends StatefulWidget {
 }
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
-  // dynamické pre používateľa
-  final List<String> lastCollected = [];
   int foundPlants = 0;
+  List<int> lastCollectedIds = const [];
 
-  void _onPlantScanned(String plantName) {
-    // ✅ Podmienka: ak rastlina nie je v zozname všetkých 26, ignorujeme kód
-    if (!allPlants.any((p) => p["name"] == plantName)) return;
+  bool _loading = true;
+  String? _token;
 
+  @override
+  void initState() {
+    super.initState();
+    _init();
+  }
+
+  Future<void> _init() async {
+    final token = await AuthService.getToken();
+    if (!mounted) return;
+    setState(() => _token = token);
+
+    if (token != null) {
+      await _loadProfile(token);
+    }
+
+    if (!mounted) return;
+    setState(() => _loading = false);
+  }
+
+  Future<void> _loadProfile(String token) async {
+    final prof = await ApiService.getProfile(token);
+    if (!mounted) return;
     setState(() {
-      // iba ak ešte nebola rastlina naskenovaná
-      if (!lastCollected.contains(plantName)) {
-        foundPlants++;
-
-        lastCollected.add(plantName);
-
-        // ✅ Zobraziť iba posledné 3 rastliny
-        if (lastCollected.length > 3) {
-          lastCollected.removeAt(0);
-        }
-      }
+      foundPlants = (prof['foundCount'] as num?)?.toInt() ?? 0;
+      lastCollectedIds = List<int>.from(prof['lastPlants'] ?? const []);
     });
   }
 
+  dialog.PlantItem _toDialogPlant(data.PlantItem p) => dialog.PlantItem(
+    id: p.id,
+    name: p.name,
+    assetPath: p.assetPath,
+  );
+
+  Future<void> _startScan() async {
+    final token = _token;
+    if (token == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Najprv sa prihlás.')),
+      );
+      return;
+    }
+
+    final result = await Navigator.push<ScanResult>(
+      context,
+      MaterialPageRoute(
+        builder: (ctx) => ScannerPage(
+          onScan: (code) => handleScan(ctx, code),
+        ),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    // Update progress + recently directly from scan response
+    setState(() {
+      foundPlants = result.foundCount;
+      lastCollectedIds = result.lastPlants;
+    });
+
+    final dataPlant = data.plantById[result.plantId];
+    if (dataPlant == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Neznáma rastlina (ID mimo 1..26).')),
+      );
+      return;
+    }
+
+    await dialog.showPlantDialog(context, _toDialogPlant(dataPlant));
+  }
 
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
 
-    final totalPlants = allPlants.length;
-    final progress = totalPlants == 0 ? 0.0 : foundPlants / totalPlants;
+    final totalPlants = data.plants.length;
+    final progress = totalPlants == 0 ? 0.0 : (foundPlants / totalPlants).clamp(0.0, 1.0);
     final percent = (progress * 100).round();
+
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
@@ -84,7 +119,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           Text(tr.discoverSubtitle, style: AppTokens.body),
           const SizedBox(height: 20),
 
-          // 🔍 Search Bar
+          // 🔍 Search Bar (zatím len UI)
           TextField(
             style: TextStyle(color: AppTokens.textPrimary),
             decoration: InputDecoration(
@@ -109,17 +144,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
           // 🌿 Scan Button
           GestureDetector(
-            onTap: () async {
-              final scanned = await Navigator.push<String>(
-                context,
-                MaterialPageRoute(
-                  builder: (ctx) => ScannerPage(
-                    onScan: (code) => handleScan(ctx, code),
-                  ),
-                ),
-              );
-              if (scanned != null) _onPlantScanned(scanned);
-            },
+            onTap: _startScan,
             child: NeonCard(
               gradient: AppTokens.tealGradient,
               shadows: AppTokens.glow(AppTokens.green400, blur: 18),
@@ -148,7 +173,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
           ),
 
-
           const SizedBox(height: 25),
 
           // 📊 Collection Progress
@@ -173,14 +197,18 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("$foundPlants / $totalPlants",
-                        style: TextStyle(fontSize: 13, color: AppTokens.textSecondary)),
-                    Text("$percent%",
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppTokens.emerald500,
-                        )),
+                    Text(
+                      "$foundPlants / $totalPlants",
+                      style: TextStyle(fontSize: 13, color: AppTokens.textSecondary),
+                    ),
+                    Text(
+                      "$percent%",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTokens.emerald500,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -200,33 +228,35 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           const SizedBox(height: 10),
 
           Column(
-            children: lastCollected.map((name) {
-              // 🔍 nájdi rastlinu podľa názvu
-              final plant = allPlants.firstWhere(
-                    (p) => p["name"] == name,
-              );
+            children: lastCollectedIds.map((id) {
+              final plant = data.plantById[id];
+              if (plant == null) return const SizedBox.shrink();
 
               return NeonCard(
                 color: AppTokens.cardDark,
                 shadows: AppTokens.tileShadow,
                 radius: AppTokens.radiusMd,
                 padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
                   children: [
-                    // 🌿 obrázok rastliny
                     Image.asset(
-                      plant["assetPath"]!,
+                      plant.assetPath,
                       width: 48,
                       height: 48,
                       fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 48,
+                        height: 48,
+                        color: AppTokens.cardDark,
+                        alignment: Alignment.center,
+                        child: Icon(Icons.image_not_supported_outlined, color: AppTokens.textSecondary),
+                      ),
                     ),
-
                     const SizedBox(width: 12),
-
-                    // 📛 názov rastliny
                     Expanded(
                       child: Text(
-                        name,
+                        plant.name,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -239,7 +269,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               );
             }).toList(),
           ),
-
         ],
       ),
     );

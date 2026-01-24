@@ -29,6 +29,6 @@ def login():
     if user and check_password_hash(user.password_hash, password):
         if not user.email_verified:
             return jsonify({"message": "Email not verified."}), 403
-        return jsonify({"message": "Login successful"}), 200
+        return jsonify({"message": "Login successful", "token": user.username}), 200
 
     return jsonify({"message": "Invalid credentials."}), 401

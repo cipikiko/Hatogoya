@@ -10,6 +10,8 @@ from verify_email import verify_bp  # ✅ pridane
 from resend_verification import resend_bp
 from cleanup import cleanup_unverified_users
 from password_reset import reset_bp
+from scan_api import scan_bp
+from profile_api import profile_bp
 
 load_dotenv()
 
@@ -71,6 +73,8 @@ app.register_blueprint(login_bp)
 app.register_blueprint(verify_bp)
 app.register_blueprint(resend_bp)
 app.register_blueprint(reset_bp)  # ✅ pridane
+app.register_blueprint(scan_bp)
+app.register_blueprint(profile_bp)
 
 # Test database connection on startup
 try:

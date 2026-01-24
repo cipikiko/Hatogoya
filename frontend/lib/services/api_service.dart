@@ -5,7 +5,17 @@ class ApiService {
   // ZMENIŤ NA TVOJU IP ADRESU / 10.0.2.2 AK IDEŠ CEZ EMULÁTOR
   static const String baseUrl = "http://10.0.2.2:5000";
 
-  static Future<Map<String, dynamic>> register(String username, String email, String password) async {
+  static Map<String, dynamic> _decodeJson(String body) {
+    final decoded = jsonDecode(body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    throw Exception('Nečakaný formát odpovede (nie je JSON objekt).');
+  }
+
+  static Future<Map<String, dynamic>> register(
+      String username,
+      String email,
+      String password,
+      ) async {
     final url = Uri.parse("$baseUrl/register");
 
     final response = await http.post(
@@ -20,7 +30,7 @@ class ApiService {
 
     return {
       "status": response.statusCode,
-      "body": jsonDecode(response.body)
+      "body": _decodeJson(response.body),
     };
   }
 
@@ -38,7 +48,7 @@ class ApiService {
 
     return {
       "status": response.statusCode,
-      "body": jsonDecode(response.body)
+      "body": _decodeJson(response.body),
     };
   }
 
@@ -56,7 +66,7 @@ class ApiService {
 
     return {
       "status": response.statusCode,
-      "body": jsonDecode(response.body)
+      "body": _decodeJson(response.body),
     };
   }
 
@@ -71,8 +81,61 @@ class ApiService {
 
     return {
       "status": response.statusCode,
-      "body": jsonDecode(response.body),
+      "body": _decodeJson(response.body),
     };
   }
 
+  // =====================
+  // 🌿 QR SCAN + PROFILE
+  // =====================
+
+  static Future<Map<String, dynamic>> scanByQrToken(String qrToken, String token) async {
+    final url = Uri.parse("$baseUrl/api/scan");
+
+    final response = await http.post(
+      url,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"qr_token": qrToken.trim()}),
+    );
+
+    if (response.statusCode == 404) {
+      throw Exception("Toto nie je náš QR kód.");
+    }
+    if (response.statusCode != 200) {
+      throw Exception("Sken sa nepodaril.");
+    }
+
+    return _decodeJson(response.body);
+  }
+
+  /// ✅ Profile response should include:
+  /// - foundCount: int
+  /// - lastPlants: List<int>
+  /// - discoveredPlantIds: List<int>   <-- pre fajky v PlantsScreen
+  static Future<Map<String, dynamic>> getProfile(String token) async {
+    final url = Uri.parse("$baseUrl/api/profile");
+
+    final response = await http.get(
+      url,
+      headers: {
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Nepodarilo sa načítať profil. HTTP ${response.statusCode}: ${response.body}");
+    }
+
+    return _decodeJson(response.body);
+  }
+
+  /// (Voliteľné) Helper, aby UI nemuselo riešiť typy.
+  static Future<Set<int>> getDiscoveredPlantIds(String token) async {
+    final prof = await getProfile(token);
+    final ids = List<int>.from(prof['discoveredPlantIds'] ?? const []);
+    return ids.toSet();
+  }
 }
