@@ -249,4 +249,12 @@ const Map<String, String> stringsNl = {
   'opening_hours_note':
   'Let op: openingstijden kunnen per seizoen verschillen. Groepsbezoeken kunnen vooraf worden afgesproken buiten de aangegeven tijden.',
 
+  'ok': 'OK',
+  'map_offsite_title': 'Je bent niet in de botanische tuin',
+  'map_offsite_body':
+  'Je huidige locatie ligt niet binnen het gebied van de botanische tuin. '
+      'We tonen je GPS-positie daarom niet op de kaart. '
+      'Je kunt de virtuele avatar gebruiken om je positie te simuleren en routes te testen.',
+
+  'web_education_title': 'Educatie',
 };

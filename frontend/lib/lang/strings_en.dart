@@ -250,4 +250,12 @@ const Map<String, String> stringsEn = {
   'opening_hours_note':
   'Note: Opening hours may vary by season. Group visits can be arranged in advance outside the listed hours.',
 
+  'ok': 'OK',
+  'map_offsite_title': 'You are not at the botanical garden',
+  'map_offsite_body':
+  'Your current location is not within the botanical garden area. '
+      'We won’t display your GPS position on the map. '
+      'You can use the virtual avatar to simulate your position and test routes.',
+
+  'web_education_title': 'Education',
 };

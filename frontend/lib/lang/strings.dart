@@ -251,7 +251,12 @@ class Tr {
 
   String get openingHoursClosed => _t('opening_hours_closed');
   String get openingHoursNote => _t('opening_hours_note');
+  String get ok => _t('ok');
 
+  String get mapOffsiteTitle => _t('map_offsite_title');
+  String get mapOffsiteBody => _t('map_offsite_body');
+
+  String get webEducationTitle => _t('web_education_title');
 }
 
 extension TrX on BuildContext {

@@ -249,4 +249,12 @@ const Map<String, String> stringsSk = {
   'opening_hours_note':
   'Poznámka: Otváracie hodiny sa môžu líšiť podľa sezóny. Skupinové návštevy je možné po dohode naplánovať aj mimo uvedených hodín.',
 
+  'ok': 'OK',
+  'map_offsite_title': 'Nenachádzaš sa v botanickej záhrade',
+  'map_offsite_body':
+  'Tvoja aktuálna poloha sa nenachádza v areáli botanickej záhrady. '
+      'GPS polohu preto na mape nezobrazíme. '
+      'Môžeš použiť virtuálneho panáčika na simuláciu polohy a testovanie trás.',
+
+  'web_education_title': 'Vzdelávanie',
 };
