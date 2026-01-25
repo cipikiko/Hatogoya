@@ -1,0 +1,33 @@
+# =========================
+# EMAIL VERIFICATION
+# =========================
+
+# Verejná URL backendu (ngrok / produkcia)
+PUBLIC_BASE_URL=https://your-public-url.example
+
+# =========================
+# SMTP (EMAIL)
+# =========================
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
+SMTP_FROM=your_email@gmail.com
+
+# =========================
+# TOKENS & TTL
+# =========================
+
+# Platnosť verifikačného tokenu (minúty)
+VERIFICATION_TOKEN_TTL_MINUTES=30
+
+# Po koľkých hodinách zmazať neoverených používateľov
+UNVERIFIED_DELETE_HOURS=24
+
+# Platnosť reset tokenu (minúty)
+RESET_TOKEN_TTL_MINUTES=30
+
+# =========================
+# APP INFO
+# =========================
+APP_NAME=Your App Name

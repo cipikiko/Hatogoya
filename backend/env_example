@@ -1,0 +1,5 @@
+DB_USERNAME="db.username"
+DB_PASSWORD="db.password"
+DB_NAME="db.name"
+DB_HOST="db.host"
+DB_PORT="5432"

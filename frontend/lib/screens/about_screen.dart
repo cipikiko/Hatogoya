@@ -1,44 +1,41 @@
 import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
+import '../lang/strings.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final tr = context.tr;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('O aplikácii'),
+        title: Text(tr.aboutTitle),
         foregroundColor: Colors.white,
-        flexibleSpace: Container(decoration: BoxDecoration(gradient: AppTokens.tealGradient)),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(gradient: AppTokens.tealGradient),
+        ),
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
-        children: const [
+        children: [
           NeonCard(
             color: AppTokens.cardDark,
             shadows: AppTokens.tileShadow,
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Botanik', style: AppTokens.h1),
-                SizedBox(height: 6),
-                Text('Verzia 1.0.0', style: AppTokens.body),
-                SizedBox(height: 16),
-                Text(
-                  'Botanik je moderná mobilná aplikácia určená pre objavovanie a evidenciu rastlín v botanickej záhrade. '
-                      'Umožňuje skenovať rastliny, sledovať pokrok, získavať odznaky a objavovať nové druhy. '
-                      'Aplikácia je súčasťou projektu Digital Garden Experience realizovaného v spolupráci s TUKE.',
-                  style: AppTokens.body,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Autori:\nTím Hatogoya & tím Botanickej záhrady',
-                  style: AppTokens.body,
-                ),
+                Text(tr.aboutAppName, style: AppTokens.h1),
+                const SizedBox(height: 6),
+                Text(tr.aboutVersion, style: AppTokens.body),
+                const SizedBox(height: 16),
+                Text(tr.aboutDescription, style: AppTokens.body),
+                const SizedBox(height: 16),
+                Text(tr.aboutAuthors, style: AppTokens.body),
               ],
             ),
           ),
