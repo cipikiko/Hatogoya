@@ -39,29 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 
-  // ✅ RESEND VERIFICATION EMAIL
-  Future<void> resendVerificationEmail() async {
-    final email = usernameCtrl.text.trim();
-
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Zadaj e-mail a skús znova.")),
-      );
-      return;
-    }
-
-    final result = await ApiService.resendVerification(email);
-    if (!mounted) return;
-
-    final msg = (result["body"] is Map && result["body"]["message"] != null)
-        ? result["body"]["message"].toString()
-        : "Overovací e-mail bol odoslaný (ak účet existuje).";
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
-  }
-
   Future<void> handleLogin() async {
     final tr = context.tr;
 
@@ -110,17 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         MaterialPageRoute(builder: (_) => const MainScreen()),
       );
-    } else if (result["status"] == 403) {
-      // ✅ Email nie je overený + ponúkneme resend
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("Najprv potvrď e-mail. Ak ti nič neprišlo, pošli si overenie znova."),
-          action: SnackBarAction(
-            label: "Poslať znova",
-            onPressed: resendVerificationEmail,
-          ),
-        ),
-      );
     } else {
       final msg = (result["body"] is Map && result["body"]["message"] != null)
           ? result["body"]["message"].toString()
@@ -159,6 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 6),
           Text(tr.loginWelcomeSubtitle, style: AppTokens.body),
           const SizedBox(height: 20),
+
           NeonCard(
             color: AppTokens.cardDark,
             shadows: AppTokens.tileShadow,
@@ -180,7 +147,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
+
           const SizedBox(height: 16),
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -199,7 +168,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+
           const SizedBox(height: 18),
+
           Center(
             child: GestureDetector(
               onTap: () {
@@ -225,7 +196,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+
           const SizedBox(height: 8),
+
           Center(
             child: GestureDetector(
               onTap: () {
@@ -244,6 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+
         ],
       ),
     );

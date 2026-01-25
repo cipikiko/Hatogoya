@@ -26,7 +26,6 @@ def validate_password(pw: str):
         return False, "Password must contain at least one uppercase letter."
     if not re.search(r"\d", pw):
         return False, "Password must contain at least one number."
-    if not re.search(r"[^\w\s]", pw):
+    if not re.search(r"[^A-Za-z0-9]", pw):
         return False, "Password must contain at least one special character (e.g. !@#?)."
-
     return True, "OK"

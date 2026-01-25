@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+
+import '../data/plants_data.dart';
+import '../lang/strings.dart';
+import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../theme/tokens.dart';
 import '../widgets/neon.dart';
-import '../lang/strings.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,22 +15,64 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  bool _loading = true;
+  String? _error;
 
+  String? _username; // ✅ added
+  int _foundPlants = 0;
+  List<int> _lastPlantIds = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) throw Exception(context.tr.scanLoginFirst);
+
+      final prof = await ApiService.getProfile(context, token);
+
+      if (!mounted) return;
+      setState(() {
+        _username = (prof['username'] as String?)?.trim(); // ✅ added
+        _foundPlants = (prof['foundCount'] as num?)?.toInt() ?? 0;
+        _lastPlantIds = List<int>.from(prof['lastPlants'] ?? const []);
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
 
-    // demo numbers (your real values can come later)
-    const foundPlants = 47;
-    const totalPlants = 120;
+    final totalPlants = plants.length; // 26
+    final progress = totalPlants == 0 ? 0.0 : (_foundPlants / totalPlants).clamp(0.0, 1.0);
+
+    final recentPlants = _lastPlantIds
+        .map((id) => plantById[id])
+        .whereType<PlantItem>()
+        .toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header (gradient + progress)
           PulseGlow(
             color: AppTokens.green400,
             child: NeonCard(
@@ -37,53 +83,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
-                      CircleAvatar(
+                    children: [
+                      const CircleAvatar(
                         radius: 25,
                         backgroundColor: Colors.white24,
                         child: Icon(Icons.eco, color: Colors.white, size: 28),
                       ),
-                      SizedBox(width: 12),
-                      _HeaderTitle(),
+                      const SizedBox(width: 12),
+                      Expanded(child: _HeaderTitle(username: _username)),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    tr.profilePlantsDiscovered,
-                    style: const TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(6)),
-                    child: LinearProgressIndicator(
-                      value: foundPlants / totalPlants,
-                      minHeight: 8,
-                      backgroundColor: Colors.white24,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      tr.profileProgressPlants(foundPlants, totalPlants),
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                    ),
-                  ),
+
+                  if (_loading)
+                    const LinearProgressIndicator(minHeight: 6)
+                  else if (_error != null)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _load,
+                          child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    )
+                  else ...[
+                      Text(
+                        tr.profilePlantsDiscovered,
+                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: const BorderRadius.all(Radius.circular(6)),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 8,
+                          backgroundColor: Colors.white24,
+                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          tr.profileProgressPlants(_foundPlants, totalPlants),
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                        ),
+                      ),
+                    ],
                 ],
               ),
             ),
-          ),
-
-          const SizedBox(height: 22),
-
-          // Stats (2)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _StatBox(label: tr.profileTotalVisits, value: '32', icon: Icons.place),
-              _StatBox(label: tr.profilePlantsFound, value: '$foundPlants', icon: Icons.eco),
-            ],
           ),
 
           const SizedBox(height: 28),
@@ -98,25 +153,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 10),
 
-          _ActivityCard(
-            title: tr.profileActivity1,
-            date: 'Oct 15, 2025',
-            color: const Color(0xFFA5D6A7),
-          ),
-          _ActivityCard(
-            title: tr.profileActivity2,
-            date: 'Oct 14, 2025',
-            color: const Color(0xFFB39DDB),
-          ),
-          _ActivityCard(
-            title: tr.profileActivity3,
-            date: 'Oct 13, 2025',
-            color: const Color(0xFF81C784),
-          ),
-
-          const SizedBox(height: 10),
-
-
+          if (_loading)
+            const Center(child: Padding(padding: EdgeInsets.all(10), child: CircularProgressIndicator()))
+          else if (_error != null)
+            Text(_error!, style: TextStyle(color: AppTokens.textSecondary))
+          else if (recentPlants.isEmpty)
+              Text(tr.profileNoActivity, style: TextStyle(color: AppTokens.textSecondary))
+            else
+              Column(
+                children: recentPlants.map((p) {
+                  return _ActivityCard(
+                    title: tr.profileDiscoveredPlant(p.name),
+                    date: tr.profileRecently,
+                    color: const Color(0xFF81C784),
+                  );
+                }).toList(),
+              ),
         ],
       ),
     );
@@ -126,11 +178,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 /* ===== Mini-widgets ===== */
 
 class _HeaderTitle extends StatelessWidget {
-  const _HeaderTitle();
+  final String? username;
+  const _HeaderTitle({this.username});
 
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
+
+    final displayName = (username == null || username!.isEmpty)
+        ? tr.profileGuest
+        : username!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,10 +200,10 @@ class _HeaderTitle extends StatelessWidget {
             fontSize: 18,
           ),
         ),
-        Text(tr.profileSubtitle, style: const TextStyle(color: Colors.white70)),
+        const SizedBox(height: 2),
         Text(
-          tr.profileMemberSince('September 2025'),
-          style: const TextStyle(color: Colors.white60),
+          tr.profileHello(displayName),
+          style: const TextStyle(color: Colors.white70),
         ),
       ],
     );
@@ -257,169 +314,6 @@ class _ActivityCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/* ===== Submit Plant Dialog ===== */
-
-class SubmitPlantDialog extends StatelessWidget {
-  const SubmitPlantDialog({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final tr = context.tr;
-
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController scientificController = TextEditingController();
-    final TextEditingController locationController = TextEditingController();
-    final TextEditingController descriptionController = TextEditingController();
-
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(20),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: AppTokens.panelGradient(),
-          borderRadius: BorderRadius.circular(AppTokens.radiusLg),
-          border: Border.all(color: AppTokens.cardBorder),
-          boxShadow: AppTokens.tileShadow,
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tr.submitTitle,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: AppTokens.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(tr.submitSubtitle, style: AppTokens.body),
-                  const SizedBox(height: 12),
-
-                  // image drop
-                  Container(
-                    width: double.infinity,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      color: AppTokens.cardDark,
-                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                      border: Border.all(color: AppTokens.cardBorder),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.image_outlined, size: 40, color: AppTokens.textSecondary),
-                          const SizedBox(height: 6),
-                          Text(tr.submitUploadTitle, style: AppTokens.body),
-                          Text(
-                            tr.submitUploadHint,
-                            style: TextStyle(color: AppTokens.textSecondary, fontSize: 12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  _inputField(tr.submitFieldPlantName, tr.submitHintPlantName, nameController),
-                  _inputField(tr.submitFieldScientificName, tr.submitHintScientificName, scientificController),
-                  _inputField(tr.submitFieldLocation, tr.submitHintLocation, locationController),
-                  _inputField(tr.submitFieldDescription, tr.submitHintDescription, descriptionController, maxLines: 3),
-
-                  const SizedBox(height: 10),
-
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTokens.cardDark,
-                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                      border: Border.all(color: AppTokens.cardBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: AppTokens.emerald500),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(tr.submitInfoReview, style: AppTokens.body),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Row(
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(tr.cancel),
-                      ),
-                      const Spacer(),
-                      ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.upload, size: 18),
-                        label: Text(tr.submitButton),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTokens.green600,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _inputField(
-      String label,
-      String hint,
-      TextEditingController ctrl, {
-        int maxLines = 1,
-      }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: ctrl,
-        maxLines: maxLines,
-        style: TextStyle(color: AppTokens.textPrimary),
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          hintStyle: TextStyle(color: AppTokens.textSecondary),
-          labelStyle: TextStyle(color: AppTokens.textSecondary),
-          filled: true,
-          fillColor: AppTokens.cardDark,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-            borderSide: BorderSide(color: AppTokens.cardBorder),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-            borderSide: BorderSide(color: AppTokens.emerald500),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        ),
       ),
     );
   }

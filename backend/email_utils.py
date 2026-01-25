@@ -17,6 +17,7 @@ def _smtp_send(msg: EmailMessage) -> None:
         server.send_message(msg)
 
 
+
 def send_password_reset_email(to_email: str, token: str) -> None:
     base_url = os.getenv("PUBLIC_BASE_URL", "http://localhost:5000").rstrip("/")
     reset_link = f"{base_url}/reset-password?token={token}"

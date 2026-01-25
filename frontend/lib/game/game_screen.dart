@@ -7,9 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-
+import '../lang/strings.dart';
 import 'assets/assets.dart';
 import 'plant_dialog.dart';
+import 'virtual_place_overlay.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -22,8 +23,10 @@ class _GameScreenState extends State<GameScreen> {
   static const double _panExtra = 180.0;
   final TransformationController _tc = TransformationController();
   StreamSubscription<Position>? _posSub;
-  static const bool useMockLocation = true;
-  static const LatLng mockMeGps = LatLng(51.226732, 5.876960); // sem dáš vlastnú
+
+ /* static const bool useMockLocation = true; // TESTOVANIE
+  Offset? _mockMePx;*/
+
   LatLng? _meGps;
   bool _following = true;
 
@@ -31,17 +34,35 @@ class _GameScreenState extends State<GameScreen> {
   final double _maxScale = 8.0;
 
   // ROUTE UI
-  bool _pickMode = false; // vlajka režim
+  bool _pickMode = false;
   bool _routeRunning = false;
-
   final List<int> _selectedPlants = [];
-  List<Offset> _routePolylinePx = [];
 
-  // ========= ORANGE-PATH ROUTER (automaticky z map.png) =========
-  static const int _gridStep = 4; // 4 presnejšie, 5 rýchlejšie
-  Uint8List? _walkMask; // 0/1 mriežka (len oranžová)
+  // MULTI-SEGMENT ROUTE (ja->1, 1->2, ...)
+  List<List<Offset>> _routeSegmentsPx = [];
+
+  // ========= ROUTER MASKS =========
+  static const int _gridStep = 4;
+  Uint8List? _orangeMask; // len oranžová
+  Uint8List? _comboMask; // oranžová + programové výnimky
   int _gw = 0, _gh = 0;
   bool _maskLoading = false;
+
+  // ŠPECIÁLNE BODY (0-based indexy):
+  // 26,13,14,8,9,10 -> (25,12,13,7,8,9)
+  static const Set<int> _specialPlants = {25, 12, 13, 7, 8, 9};
+
+  // ✅ Virtuálna poloha (panáčik)
+  Offset? _virtualMePx;
+  bool _placeMode = false;
+
+  // ✅ OFFSITE logika
+  // Stred lokality: použijeme bod 16 (index 15) ako referenčný "stred" botanickej.
+  static const LatLng _siteCenterGps = LatLng(51.226732, 5.876960); // bod 16
+  static const double _siteRadiusMeters = 5000; // 1–5 km -> dáme 5 km
+
+  bool _isOffsite = false;
+  bool _offsiteDialogShowing = false;
 
   @override
   void initState() {
@@ -58,11 +79,47 @@ class _GameScreenState extends State<GameScreen> {
         scale: _minScale,
       );
 
-      // prednačítaj masku (neblokuj UI)
-      _ensureWalkMask();
-
+      _ensureMasks();
       await _initLocation();
     });
+  }
+
+  // ===========================
+  // OFFSITE DIALOG
+  // ===========================
+  Future<void> _showOffsiteDialogOnce() async {
+    if (!mounted) return;
+    if (_offsiteDialogShowing) return;
+
+    _offsiteDialogShowing = true;
+
+    await showDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(ctx.tr.mapOffsiteTitle),
+        content: Text(ctx.tr.mapOffsiteBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(),
+            child: Text(ctx.tr.ok),
+          ),
+        ],
+      ),
+    );
+
+    _offsiteDialogShowing = false;
+  }
+
+  bool _isWithinSiteRadius(Position p) {
+    final d = Geolocator.distanceBetween(
+      p.latitude,
+      p.longitude,
+      _siteCenterGps.latitude,
+      _siteCenterGps.longitude,
+    );
+    return d <= _siteRadiusMeters;
   }
 
   // ===========================
@@ -78,12 +135,49 @@ class _GameScreenState extends State<GameScreen> {
     px.dy.clamp(0.0, mapHeightPx.toDouble()).toDouble(),
   );
 
-  Offset? _mePxRaw() => (_meGps == null) ? null : _gpsToPixel(_meGps!);
+  List<Offset> _computePlantPx() {
+    return List<Offset>.generate(plantPoints.length, (i) {
+      final base = _gpsToPixel(plantPoints[i]);
+      return base + markerOffsetsPx[i];
+    });
+  }
+
+  Offset? _mePxRaw() {
+    // ✅ priorita: virtuálna poloha (panáčik)
+    if (_virtualMePx != null) return _virtualMePx;
+
+    // ✅ ak sme offsite, reálnu polohu vôbec nekresli
+    if (_isOffsite) return null;
+
+    // reálna GPS
+    return (_meGps == null) ? null : _gpsToPixel(_meGps!);
+  }
+
+ /* Offset? _mePxRaw() { TESTOVANIE
+    // ✅ priorita: virtuálna poloha (panáčik)
+    if (_virtualMePx != null) return _virtualMePx;
+
+    // ✅ DEV mock poloha (testovanie)
+    if (useMockLocation && _mockMePx != null) return _mockMePx;
+
+    // ✅ ak sme offsite, reálnu polohu vôbec nekresli
+    if (_isOffsite) return null;
+
+    // reálna GPS
+    return (_meGps == null) ? null : _gpsToPixel(_meGps!);
+  }*/
+
 
   Offset? _mePxClamped() {
     final raw = _mePxRaw();
     if (raw == null) return null;
     return _clampToMap(raw);
+  }
+
+  bool get _isOffMap {
+    final raw = _mePxRaw();
+    if (raw == null) return true;
+    return !_insideMap(raw);
   }
 
   // ===========================
@@ -122,7 +216,6 @@ class _GameScreenState extends State<GameScreen> {
       dx.clamp(minDx, maxDx).toDouble(),
       dy.clamp(minDy, maxDy).toDouble(),
     );
-
   }
 
   void _setTransformCenteredOn({
@@ -177,16 +270,27 @@ class _GameScreenState extends State<GameScreen> {
   // LOCATION
   // ===========================
   Future<void> _initLocation() async {
-    if (useMockLocation) {
-      setState(() {
-        _meGps = mockMeGps;
-      });
-      _centerOnMe(initial: true);
-      return;
-    }
-
     final enabled = await Geolocator.isLocationServiceEnabled();
     if (!enabled) return;
+  // ✅ DEV mock poloha hneď na začiatku _initLocation()
+   /* if (useMockLocation) { TESTOVANIE
+      // bod 16 (marker 16) = index 15 (0-based)
+      const int idx = 15;
+
+      final gps = plantPoints[idx];
+      final px = _gpsToPixel(gps) + markerOffsetsPx[idx]; // presne na marker
+
+      setState(() {
+        _isOffsite = false;     // aby sa poloha nekryla offsite logikou
+        _meGps = gps;
+        _mockMePx = px;         // ✅ kreslenie bodky presne na bod 16
+        _virtualMePx = null;    // vypni panáčika
+        _placeMode = false;
+      });
+
+      _centerOnMe(initial: true);
+      return;
+    }*/
 
     var perm = await Geolocator.checkPermission();
     if (perm == LocationPermission.denied) {
@@ -195,12 +299,24 @@ class _GameScreenState extends State<GameScreen> {
     if (perm == LocationPermission.denied ||
         perm == LocationPermission.deniedForever) return;
 
+    // prvý fixný bod
     final last = await Geolocator.getLastKnownPosition();
     if (last != null && mounted) {
-      setState(() {
-        _meGps = LatLng(last.latitude, last.longitude);
-      });
-      _centerOnMe(initial: true);
+      final within = _isWithinSiteRadius(last);
+
+      if (!within) {
+        setState(() {
+          _isOffsite = true;
+          _meGps = null; // ✅ nevykresľuj reálnu polohu
+        });
+        await _showOffsiteDialogOnce();
+      } else {
+        setState(() {
+          _isOffsite = false;
+          _meGps = LatLng(last.latitude, last.longitude);
+        });
+        _centerOnMe(initial: true);
+      }
     }
 
     const settings = LocationSettings(
@@ -209,16 +325,35 @@ class _GameScreenState extends State<GameScreen> {
     );
 
     _posSub?.cancel();
-    _posSub =
-        Geolocator.getPositionStream(locationSettings: settings).listen((pos) {
-          if (!mounted) return;
+    _posSub = Geolocator.getPositionStream(locationSettings: settings)
+        .listen((pos) async {
+      if (!mounted) return;
 
-          setState(() {
-            _meGps = LatLng(pos.latitude, pos.longitude);
-          });
+      final within = _isWithinSiteRadius(pos);
 
-          if (_following) _centerOnMe();
+      if (!within) {
+        // ✅ mimo lokality: nevykresľuj polohu, iba panáčik
+        final wasOffsite = _isOffsite;
+        setState(() {
+          _isOffsite = true;
+          _meGps = null;
         });
+
+        // dialóg len pri prechode do offsite (aby neotravoval pri každom ticku)
+        if (!wasOffsite) {
+          await _showOffsiteDialogOnce();
+        }
+        return;
+      }
+
+      // ✅ v lokalite: ak nepoužívaš panáčika, zobrazuj reálnu polohu
+      setState(() {
+        _isOffsite = false;
+        _meGps = LatLng(pos.latitude, pos.longitude);
+      });
+
+      if (_following && _virtualMePx == null) _centerOnMe();
+    });
   }
 
   Future<void> _openPlant(int index) async {
@@ -234,13 +369,120 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   // ===========================
-  // ROUTE (pick + start/stop)
+  // VIRTUAL "PANÁČIK" MODE
+  // ===========================
+  void _clearVirtualPosition() {
+    setState(() {
+      _virtualMePx = null;
+      _placeMode = false;
+    });
+
+    // voliteľné: vypni trasu, aby to neostalo naviazané na starý štart
+    setState(() {
+      _routeRunning = false;
+      _routeSegmentsPx = [];
+    });
+
+    _toast('Virtuálna poloha odstránená.');
+  }
+
+  Future<void> _togglePlaceMode() async {
+    // dovolíme placeMode keď:
+    // - si off-map / offsite (t.j. nemáš platnú polohu na mape)
+    // - alebo už máš virtuálnu polohu (chceš ju presunúť)
+    if (!_isOffMap && _virtualMePx == null) return;
+
+    await _ensureMasks();
+    if (_orangeMask == null || _gw == 0 || _gh == 0) {
+      _toast('Neviem načítať mapu.');
+      return;
+    }
+
+    setState(() {
+      _placeMode = !_placeMode;
+      _pickMode = false;
+    });
+
+    if (_placeMode) {
+      _setTransformCenteredOn(
+        targetPx: const Offset(mapWidthPx / 2, mapHeightPx / 2),
+        scale: _currentScale().clamp(_minScale, _maxScale).toDouble(),
+      );
+      _toast('Ťukni na oranžový chodník alebo marker a nastav si polohu.');
+    }
+  }
+
+  void _setVirtualPosition(Offset px) {
+    setState(() {
+      _virtualMePx = px;
+      _placeMode = false;
+      _following = true;
+    });
+    _centerOnMe();
+    _toast('Virtuálna poloha nastavená.');
+  }
+
+  void _handleTapForPlaceMode(Offset viewportLocalPos) {
+    if (!_placeMode) return;
+    if (_orangeMask == null) return;
+
+    final scenePx = _tc.toScene(viewportLocalPos);
+    if (!_insideMap(scenePx)) {
+      _toast('Klikni len do mapy.');
+      return;
+    }
+
+    // 1) marker hit
+    final plantPx = _computePlantPx();
+    const double markerHitRadius = 24.0;
+
+    int? hitIndex;
+    double bestD = double.infinity;
+    for (int i = 0; i < plantPx.length; i++) {
+      final d = (plantPx[i] - scenePx).distance;
+      if (d < markerHitRadius && d < bestD) {
+        bestD = d;
+        hitIndex = i;
+      }
+    }
+
+    if (hitIndex != null) {
+      _setVirtualPosition(plantPx[hitIndex!]);
+      return;
+    }
+
+    // 2) inak len oranžový chodník (snap)
+    final router = _OrangePathRouter(
+      mask: _orangeMask!,
+      gw: _gw,
+      gh: _gh,
+      step: _gridStep,
+    );
+
+    final snapped = router.snapPx(scenePx);
+    if (snapped == null) {
+      _toast('Sem nemôžeš – len na oranžový chodník alebo marker.');
+      return;
+    }
+
+    if ((snapped - scenePx).distance > 40) {
+      _toast('Sem nemôžeš – len na oranžový chodník alebo marker.');
+      return;
+    }
+
+    _setVirtualPosition(snapped);
+  }
+
+  // ===========================
+  // ROUTE
   // ===========================
   void _togglePickMode() {
+    if (_placeMode) return;
     setState(() => _pickMode = !_pickMode);
   }
 
   void _toggleSelectPlant(int i) {
+    if (_placeMode) return;
     setState(() {
       if (_selectedPlants.contains(i)) {
         _selectedPlants.remove(i);
@@ -250,12 +492,11 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  /// Snap tvojej polohy na najbližší oranžový chodník (ak sa dá).
-  Offset _snapMeToOrangeOrSelf(Offset mePx) {
-    if (_walkMask == null || _gw == 0 || _gh == 0) return mePx;
+  Offset _snapMeToPathOrSelf(Offset mePx) {
+    if (_comboMask == null || _gw == 0 || _gh == 0) return mePx;
 
     final router = _OrangePathRouter(
-      mask: _walkMask!,
+      mask: _comboMask!,
       gw: _gw,
       gh: _gh,
       step: _gridStep,
@@ -264,22 +505,25 @@ class _GameScreenState extends State<GameScreen> {
     return router.snapPx(mePx) ?? mePx;
   }
 
+  bool _isSpecialIndex(int? plantIndex) =>
+      plantIndex != null && _specialPlants.contains(plantIndex);
+
   Future<void> _startOrStopRoute(List<Offset> plantPx) async {
-    // STOP => vypni trasu + reset výberu
+    if (_placeMode) return;
+
     if (_routeRunning) {
       setState(() {
         _routeRunning = false;
-        _routePolylinePx = [];
-        _selectedPlants.clear(); // reset výberu
+        _routeSegmentsPx = [];
+        _selectedPlants.clear();
         _pickMode = false;
       });
       return;
     }
 
-    // START
     var mePx = _mePxClamped();
     if (mePx == null) {
-      _toast('Nemám polohu (GPS).');
+      _toast('Nemám polohu. Použi panáčika alebo buď v lokalite.');
       return;
     }
     if (_selectedPlants.isEmpty) {
@@ -287,33 +531,44 @@ class _GameScreenState extends State<GameScreen> {
       return;
     }
 
-    await _ensureWalkMask();
-    if (_walkMask == null) {
+    await _ensureMasks();
+    if (_orangeMask == null || _comboMask == null) {
       _toast('Neviem načítať mapu.');
       return;
     }
 
-    // ✅ prilep štart na chodník
-    mePx = _snapMeToOrangeOrSelf(mePx);
+    mePx = _snapMeToPathOrSelf(mePx);
 
-    final router = _OrangePathRouter(
-      mask: _walkMask!,
+    final routerOrange = _OrangePathRouter(
+      mask: _orangeMask!,
       gw: _gw,
       gh: _gh,
       step: _gridStep,
     );
 
-    // poradie podľa NAJKRATŠEJ CESTY PO ORANŽOVEJ (A* cost)
+    final routerCombo = _OrangePathRouter(
+      mask: _comboMask!,
+      gw: _gw,
+      gh: _gh,
+      step: _gridStep,
+    );
+
     final remaining = _selectedPlants.toSet();
-    final full = <Offset>[];
+    final segments = <List<Offset>>[];
+
+    int? lastVisitedIndex;
 
     while (remaining.isNotEmpty) {
-      final startPx = full.isEmpty ? mePx : full.last;
+      final startPx = segments.isEmpty ? mePx : segments.last.last;
+      final startIsSpecial = _isSpecialIndex(lastVisitedIndex);
 
       int? bestTarget;
       double bestCost = double.infinity;
 
       for (final t in remaining) {
+        final useCombo = startIsSpecial || _specialPlants.contains(t);
+        final router = useCombo ? routerCombo : routerOrange;
+
         final cost = router.routeCost(startPx, plantPx[t]);
         if (cost < bestCost) {
           bestCost = cost;
@@ -322,37 +577,36 @@ class _GameScreenState extends State<GameScreen> {
       }
 
       if (bestTarget == null || bestCost.isInfinite) {
-        _toast('Nenašiel som cestu po oranžovej (chýba spojenie).');
+        _toast('Nenašiel som cestu (chýba spojenie).');
         return;
       }
+
+      final useCombo = startIsSpecial || _specialPlants.contains(bestTarget);
+      final router = useCombo ? routerCombo : routerOrange;
 
       final seg = router.routePx(startPx, plantPx[bestTarget]);
       if (seg.isEmpty) {
-        _toast('Nenašiel som cestu po oranžovej (segment).');
+        _toast('Nenašiel som cestu (segment).');
         return;
       }
 
-      if (full.isEmpty) {
-        full.addAll(seg);
-      } else {
-        full.addAll(seg.skip(1));
-      }
-
+      segments.add(seg);
       remaining.remove(bestTarget);
+      lastVisitedIndex = bestTarget;
     }
 
     setState(() {
       _pickMode = false;
       _routeRunning = true;
-      _routePolylinePx = full; // bez simplifikácie => nikdy nerezať mimo oranžovej
+      _routeSegmentsPx = segments;
     });
   }
 
   // ===========================
-  // ORANGE MASK BUILD (z map.png)
+  // MASK BUILD
   // ===========================
-  Future<void> _ensureWalkMask() async {
-    if (_walkMask != null || _maskLoading) return;
+  Future<void> _ensureMasks() async {
+    if ((_orangeMask != null && _comboMask != null) || _maskLoading) return;
     _maskLoading = true;
 
     try {
@@ -363,21 +617,20 @@ class _GameScreenState extends State<GameScreen> {
 
       final byteData = await img.toByteData(format: ui.ImageByteFormat.rawRgba);
       if (byteData == null) {
-        _walkMask = null;
+        _orangeMask = null;
+        _comboMask = null;
         return;
       }
 
       final w = img.width;
-      final h = img.height;
       final rgba = byteData.buffer.asUint8List();
 
       _gw = (w / _gridStep).floor();
-      _gh = (h / _gridStep).floor();
+      _gh = (img.height / _gridStep).floor();
 
-      final mask = Uint8List(_gw * _gh);
+      final base = Uint8List(_gw * _gh);
 
       bool isOrange(int r, int g, int b) {
-        // tolerantné: oranžová chodníková farba
         if (r < 170) return false;
         if (g < 60 || g > 230) return false;
         if (b > 140) return false;
@@ -397,15 +650,21 @@ class _GameScreenState extends State<GameScreen> {
           final b = rgba[idxPx + 2];
 
           if (isOrange(r, g, b)) {
-            mask[gy * _gw + gx] = 1;
+            base[gy * _gw + gx] = 1;
           }
         }
       }
 
-      // dilatácia 1x (zhrubni chodník)
-      _walkMask = _dilate(mask, _gw, _gh);
+      final orange = _dilate(base, _gw, _gh);
+      final combo = Uint8List.fromList(orange);
+
+      _addProgrammaticExceptions(combo);
+
+      _orangeMask = orange;
+      _comboMask = _dilate(combo, _gw, _gh);
     } catch (_) {
-      _walkMask = null;
+      _orangeMask = null;
+      _comboMask = null;
     } finally {
       _maskLoading = false;
     }
@@ -437,6 +696,150 @@ class _GameScreenState extends State<GameScreen> {
     return out;
   }
 
+  // ==========================================================
+  // PROGRAMOVÉ VÝNIMKY (ako si mal)
+  // ==========================================================
+  void _addProgrammaticExceptions(Uint8List mask) {
+    Offset plantAt(int i) {
+      final base = _gpsToPixel(plantPoints[i]);
+      return base + markerOffsetsPx[i];
+    }
+
+    Offset snapToMask(Offset approxPx, {int maxR = 160}) {
+      final gx0 = (approxPx.dx / _gridStep).round();
+      final gy0 = (approxPx.dy / _gridStep).round();
+
+      bool walk(int gx, int gy) {
+        if (gx < 0 || gy < 0 || gx >= _gw || gy >= _gh) return false;
+        return mask[gy * _gw + gx] == 1;
+      }
+
+      if (walk(gx0, gy0)) {
+        return Offset((gx0 + 0.5) * _gridStep, (gy0 + 0.5) * _gridStep);
+      }
+
+      for (int r = 1; r <= maxR; r++) {
+        for (int dy = -r; dy <= r; dy++) {
+          final y = gy0 + dy;
+          final x1 = gx0 - r;
+          final x2 = gx0 + r;
+          if (walk(x1, y)) {
+            return Offset((x1 + 0.5) * _gridStep, (y + 0.5) * _gridStep);
+          }
+          if (walk(x2, y)) {
+            return Offset((x2 + 0.5) * _gridStep, (y + 0.5) * _gridStep);
+          }
+        }
+        for (int dx = -r; dx <= r; dx++) {
+          final x = gx0 + dx;
+          final y1 = gy0 - r;
+          final y2 = gy0 + r;
+          if (walk(x, y1)) {
+            return Offset((x + 0.5) * _gridStep, (y1 + 0.5) * _gridStep);
+          }
+          if (walk(x, y2)) {
+            return Offset((x + 0.5) * _gridStep, (y2 + 0.5) * _gridStep);
+          }
+        }
+      }
+      return approxPx;
+    }
+
+    void drawPolyline(List<Offset> pts, {double thicknessPx = 12}) {
+      if (pts.length < 2) return;
+
+      final radCells = (thicknessPx / _gridStep).ceil().clamp(1, 16);
+
+      void markCell(int gx, int gy) {
+        if (gx < 0 || gy < 0 || gx >= _gw || gy >= _gh) return;
+        mask[gy * _gw + gx] = 1;
+      }
+
+      void markThickAt(Offset p) {
+        final gx = (p.dx / _gridStep).round();
+        final gy = (p.dy / _gridStep).round();
+        for (int dy = -radCells; dy <= radCells; dy++) {
+          for (int dx = -radCells; dx <= radCells; dx++) {
+            final dd = dx * dx + dy * dy;
+            if (dd > radCells * radCells) continue;
+            markCell(gx + dx, gy + dy);
+          }
+        }
+      }
+
+      for (int i = 0; i < pts.length - 1; i++) {
+        final a = pts[i];
+        final b = pts[i + 1];
+        final dx = b.dx - a.dx;
+        final dy = b.dy - a.dy;
+        final dist = math.sqrt(dx * dx + dy * dy);
+
+        final stepPx = (_gridStep / 2).toDouble();
+        final n = math.max(1, (dist / stepPx).ceil());
+
+        for (int k = 0; k <= n; k++) {
+          final t = k / n;
+          final p = Offset(a.dx + dx * t, a.dy + dy * t);
+          markThickAt(p);
+        }
+      }
+    }
+
+    final p26 = plantAt(25);
+    final p13 = plantAt(12);
+    final p14 = plantAt(13);
+    final p8 = plantAt(7);
+    final p9 = plantAt(8);
+    final p10 = plantAt(9);
+
+    // 13 + 14
+    final jLeft = snapToMask(const Offset(175, 760));
+    const mid13_14 = Offset(300, 745);
+    drawPolyline([jLeft, mid13_14, p13], thicknessPx: 12);
+    drawPolyline([jLeft, mid13_14, p14], thicknessPx: 12);
+
+    // 26: spodný vstup + zvislá + vetvy
+    final j26Bottom = snapToMask(const Offset(640, 1045));
+    final j26Top = snapToMask(const Offset(740, 645));
+
+    final v1 = Offset(j26Bottom.dx + 8, j26Bottom.dy - 140);
+    final v2 = Offset(j26Bottom.dx + 14, j26Bottom.dy - 300);
+    final v3 = Offset(j26Bottom.dx + 20, j26Bottom.dy - 460);
+    final v4 = Offset(j26Top.dx - 30, j26Top.dy + 70);
+    drawPolyline([j26Bottom, v1, v2, v3, v4, j26Top], thicknessPx: 12);
+
+    final b26a = Offset(j26Bottom.dx + 28, j26Bottom.dy - 110);
+    final b26b = Offset(j26Bottom.dx + 52, j26Bottom.dy - 220);
+    drawPolyline([j26Bottom, b26a, b26b, p26], thicknessPx: 12);
+
+    final t26a = Offset(j26Top.dx - 80, j26Top.dy + 70);
+    drawPolyline([j26Top, t26a, p26], thicknessPx: 12);
+
+    // FIX: 10 -> spodný vstup
+    final p10a = Offset(p10.dx + 35, p10.dy + 30);
+    final p10b = Offset(p10.dx + 75, p10.dy + 70);
+    final p10c = Offset(j26Bottom.dx - 40, j26Bottom.dy - 20);
+    drawPolyline([p10, p10a, p10b, p10c, j26Bottom], thicknessPx: 12);
+
+    // 10: aj alternatívne napojenia
+    final j10Left = snapToMask(const Offset(485, 945));
+    final j10Right = snapToMask(const Offset(585, 900));
+    drawPolyline([j10Left, Offset(j10Left.dx + 30, j10Left.dy - 5), p10],
+        thicknessPx: 12);
+    drawPolyline([j10Right, Offset(j10Right.dx - 20, j10Right.dy + 25), p10],
+        thicknessPx: 12);
+
+    // 8 + 9
+    final jBottomLeft = snapToMask(const Offset(575, 1315));
+    final jBottomRight = snapToMask(const Offset(705, 1315));
+
+    drawPolyline([jBottomLeft, const Offset(605, 1270), p8], thicknessPx: 12);
+    drawPolyline([jBottomRight, const Offset(660, 1255), p8], thicknessPx: 12);
+
+    drawPolyline([jBottomLeft, const Offset(630, 1250), p9], thicknessPx: 12);
+    drawPolyline([jBottomRight, const Offset(690, 1235), p9], thicknessPx: 12);
+  }
+
   Color _markerColor(int i) {
     if (_pickMode) {
       if (_selectedPlants.contains(i)) return Colors.orange.withOpacity(0.95);
@@ -450,10 +853,7 @@ class _GameScreenState extends State<GameScreen> {
   // ===========================
   @override
   Widget build(BuildContext context) {
-    final plantPx = List<Offset>.generate(plantPoints.length, (i) {
-      final base = _gpsToPixel(plantPoints[i]);
-      return base + markerOffsetsPx[i];
-    });
+    final plantPx = _computePlantPx();
 
     final meRaw = _mePxRaw();
     final meClamp = _mePxClamped();
@@ -462,126 +862,195 @@ class _GameScreenState extends State<GameScreen> {
     const double markerSize = 42;
     const double markerHalf = markerSize / 2;
 
+    // ✅ tlačidlo panáčika:
+    // - zobraz ak si mimo mapy alebo offsite (raw null => offmap true)
+    // - alebo ak už je virtuálna poloha nastavená (aby sa dala zmazať)
+    final showAvatarBtn = _isOffMap || _virtualMePx != null;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
           Positioned.fill(
-            child: InteractiveViewer(
-              transformationController: _tc,
-              boundaryMargin: const EdgeInsets.all(_panExtra),
-              minScale: _minScale,
-              maxScale: _maxScale,
-              constrained: false,
-              clipBehavior: Clip.hardEdge,
-              onInteractionStart: (_) => _following = false,
-              onInteractionEnd: (_) {
-                final size = MediaQuery.of(context).size;
-                final s = _currentScale().clamp(_minScale, _maxScale).toDouble();
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTapDown: (d) => _handleTapForPlaceMode(d.localPosition),
+              child: InteractiveViewer(
+                transformationController: _tc,
+                boundaryMargin: const EdgeInsets.all(_panExtra),
+                minScale: _minScale,
+                maxScale: _maxScale,
+                constrained: false,
+                clipBehavior: Clip.hardEdge,
+                onInteractionStart: (_) => _following = false,
+                onInteractionEnd: (_) {
+                  final size = MediaQuery.of(context).size;
+                  final s =
+                  _currentScale().clamp(_minScale, _maxScale).toDouble();
 
-                final dx = _tc.value.storage[12];
-                final dy = _tc.value.storage[13];
+                  final dx = _tc.value.storage[12];
+                  final dy = _tc.value.storage[13];
 
-                final clamped =
-                _clampTranslate(dx: dx, dy: dy, scale: s, view: size);
+                  final clamped =
+                  _clampTranslate(dx: dx, dy: dy, scale: s, view: size);
 
-                _tc.value = Matrix4.identity()
-                  ..translate(clamped.dx, clamped.dy)
-                  ..scale(s);
-              },
-              child: SizedBox(
-                width: mapWidthPx,
-                height: mapHeightPx,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Image.asset(
-                        mapImageAsset,
-                        fit: BoxFit.fill,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: Colors.white,
-                          alignment: Alignment.center,
-                          child: const Text(
-                            'MAP ASSET ERROR\n(skús pubspec.yaml assets)',
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // TRASA: ZELENÁ a iba po oranžovej
-                    if (_routeRunning && _routePolylinePx.length >= 2)
+                  _tc.value = Matrix4.identity()
+                    ..translate(clamped.dx, clamped.dy)
+                    ..scale(s);
+                },
+                child: SizedBox(
+                  width: mapWidthPx,
+                  height: mapHeightPx,
+                  child: Stack(
+                    children: [
                       Positioned.fill(
-                        child: IgnorePointer(
-                          child: CustomPaint(
-                            painter: _RoutePainter(_routePolylinePx),
+                        child: Image.asset(
+                          mapImageAsset,
+                          fit: BoxFit.fill,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: Colors.white,
+                            alignment: Alignment.center,
+                            child: const Text(
+                              'MAP ASSET ERROR\n(skús pubspec.yaml assets)',
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                       ),
 
-                    // Rastliny
-                    for (int i = 0; i < plantPx.length; i++)
-                      if (_insideMap(plantPx[i]))
-                        Positioned(
-                          left: plantPx[i].dx - markerHalf,
-                          top: plantPx[i].dy - markerHalf,
-                          width: markerSize,
-                          height: markerSize,
-                          child: GestureDetector(
-                            onTap: () {
-                              if (_pickMode) {
-                                _toggleSelectPlant(i);
-                              } else {
-                                _openPlant(i);
-                              }
-                            },
-                            child: Container(
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _markerColor(i),
-                                border: Border.all(
-                                    color: Colors.white30, width: 2),
-                              ),
-                              child: Text(
-                                '${i + 1}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13,
-                                ),
+                      // ✅ zvýraznenie oranžovej časti pri placeMode
+                      if (_placeMode &&
+                          _orangeMask != null &&
+                          _gw > 0 &&
+                          _gh > 0)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: CustomPaint(
+                              painter: OrangeMaskOverlayPainter(
+                                mask: _orangeMask!,
+                                gw: _gw,
+                                gh: _gh,
+                                step: _gridStep,
                               ),
                             ),
                           ),
                         ),
 
-                    // TY (bodka)
-                    if (meRaw != null)
-                      Positioned(
-                        left: (meInside ? meRaw.dx : (meClamp?.dx ?? 0)) - 12,
-                        top: (meInside ? meRaw.dy : (meClamp?.dy ?? 0)) - 12,
-                        width: 24,
-                        height: 24,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.blue,
-                            border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: const [
-                              BoxShadow(
-                                blurRadius: 8,
-                                spreadRadius: 2,
-                                color: Colors.black26,
-                              ),
-                            ],
+                      // TRASA
+                      if (_routeRunning && _routeSegmentsPx.isNotEmpty)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: CustomPaint(
+                              painter: _MultiRoutePainter(_routeSegmentsPx),
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+
+                      // Markery
+                      for (int i = 0; i < plantPx.length; i++)
+                        if (_insideMap(plantPx[i]))
+                          Positioned(
+                            left: plantPx[i].dx - markerHalf,
+                            top: plantPx[i].dy - markerHalf,
+                            width: markerSize,
+                            height: markerSize,
+                            child: GestureDetector(
+                              onTap: () {
+                                if (_placeMode) {
+                                  _setVirtualPosition(plantPx[i]);
+                                  return;
+                                }
+                                if (_pickMode) {
+                                  _toggleSelectPlant(i);
+                                } else {
+                                  _openPlant(i);
+                                }
+                              },
+                              child: Container(
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _markerColor(i),
+                                  border:
+                                  Border.all(color: Colors.white30, width: 2),
+                                  boxShadow: _placeMode
+                                      ? const [
+                                    BoxShadow(
+                                      blurRadius: 14,
+                                      spreadRadius: 2,
+                                      color: Color(0x8800BCD4),
+                                    ),
+                                  ]
+                                      : null,
+                                ),
+                                child: Text(
+                                  '${i + 1}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                      // TY (bodka) — zobraz iba ak máme platný meRaw (t.j. nie offsite bez panáčika)
+                      if (meRaw != null)
+                        Positioned(
+                          left: (meInside ? meRaw.dx : (meClamp?.dx ?? 0)) - 12,
+                          top: (meInside ? meRaw.dy : (meClamp?.dy ?? 0)) - 12,
+                          width: 24,
+                          height: 24,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.blue,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: const [
+                                BoxShadow(
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                  color: Colors.black26,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
+
+          // malý hint banner
+          if (_placeMode)
+            Positioned(
+              left: 12,
+              right: 12,
+              top: 44,
+              child: IgnorePointer(
+                child: Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0B1B22).withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0x5500BCD4)),
+                  ),
+                  child: const Text(
+                    'Vyber si virtuálnu polohu: ťukni na zvýraznený oranžový chodník alebo na marker.',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
 
           // Buttons
           Positioned(
@@ -600,6 +1069,28 @@ class _GameScreenState extends State<GameScreen> {
                 ),
                 const SizedBox(height: 12),
 
+                // PANÁČIK – iba ak si mimo mapy/offsite alebo už máš virtuálnu polohu
+                if (showAvatarBtn) ...[
+                  FloatingActionButton(
+                    heroTag: 'avatar',
+                    onPressed: () {
+                      if (_virtualMePx != null && !_placeMode) {
+                        _clearVirtualPosition();
+                        return;
+                      }
+                      _togglePlaceMode();
+                    },
+                    child: Icon(
+                      _placeMode
+                          ? Icons.close
+                          : (_virtualMePx != null
+                          ? Icons.person_off
+                          : Icons.person_pin_circle),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
                 FloatingActionButton(
                   heroTag: 'pick',
                   onPressed: _togglePickMode,
@@ -610,8 +1101,8 @@ class _GameScreenState extends State<GameScreen> {
                 FloatingActionButton(
                   heroTag: 'startStop',
                   onPressed: () => _startOrStopRoute(plantPx),
-                  child: Icon(
-                      _routeRunning ? Icons.stop_circle : Icons.play_arrow),
+                  child:
+                  Icon(_routeRunning ? Icons.stop_circle : Icons.play_arrow),
                 ),
                 const SizedBox(height: 12),
 
@@ -621,6 +1112,7 @@ class _GameScreenState extends State<GameScreen> {
                   child: const Icon(Icons.add),
                 ),
                 const SizedBox(height: 12),
+
                 FloatingActionButton(
                   heroTag: 'minus',
                   onPressed: () => _zoom(0.8),
@@ -643,7 +1135,7 @@ class _GameScreenState extends State<GameScreen> {
 }
 
 // ======================================================
-// ROUTER: A* len po oranžových pixeloch (walk mask)
+// ROUTER: A* po walk mask (0/1)
 // ======================================================
 class _OrangePathRouter {
   final Uint8List mask;
@@ -664,14 +1156,13 @@ class _OrangePathRouter {
     return mask[_idx(x, y)] == 1;
   }
 
-  // snap px -> najbližší walkable grid bod
   (int, int)? _snap(Offset px) {
     final gx0 = (px.dx / step).round();
     final gy0 = (px.dy / step).round();
 
     if (_walk(gx0, gy0)) return (gx0, gy0);
 
-    const int maxR = 40;
+    const int maxR = 80;
     for (int r = 1; r <= maxR; r++) {
       for (int dy = -r; dy <= r; dy++) {
         final y = gy0 + dy;
@@ -691,7 +1182,6 @@ class _OrangePathRouter {
     return null;
   }
 
-  /// Verejný snap: vráti pixel pozíciu na najbližšom oranžovom bode (alebo null).
   Offset? snapPx(Offset px) {
     final s = _snap(px);
     if (s == null) return null;
@@ -699,7 +1189,6 @@ class _OrangePathRouter {
     return Offset((sx + 0.5) * step, (sy + 0.5) * step);
   }
 
-  // len zistí dĺžku najkratšej cesty po oranžovej (bez rekonštrukcie)
   double routeCost(Offset startPx, Offset endPx) {
     final s = _snap(startPx);
     final t = _snap(endPx);
@@ -712,8 +1201,8 @@ class _OrangePathRouter {
     final gScore = List<double>.filled(n, double.infinity);
     final closed = Uint8List(n);
 
-    int sId = _idx(sx, sy);
-    int tId = _idx(tx, ty);
+    final sId = _idx(sx, sy);
+    final tId = _idx(tx, ty);
 
     double h(int x, int y) {
       final dx = (x - tx).toDouble();
@@ -771,7 +1260,6 @@ class _OrangePathRouter {
     return double.infinity;
   }
 
-  // vráti konkrétnu cestu (polyline bodov po oranžovej)
   List<Offset> routePx(Offset startPx, Offset endPx) {
     final s = _snap(startPx);
     final t = _snap(endPx);
@@ -785,8 +1273,8 @@ class _OrangePathRouter {
     final cameFrom = List<int>.filled(n, -1);
     final closed = Uint8List(n);
 
-    int sId = _idx(sx, sy);
-    int tId = _idx(tx, ty);
+    final sId = _idx(sx, sy);
+    final tId = _idx(tx, ty);
 
     double h(int x, int y) {
       final dx = (x - tx).toDouble();
@@ -844,7 +1332,6 @@ class _OrangePathRouter {
 
     if (tId != sId && cameFrom[tId] == -1) return const [];
 
-    // rekonštrukcia
     final rev = <int>[];
     int cur = tId;
     rev.add(cur);
@@ -857,7 +1344,6 @@ class _OrangePathRouter {
 
     final pathIds = rev.reversed.toList();
 
-    // grid -> px
     final out = <Offset>[];
     for (final id in pathIds) {
       final x = idToX(id);
@@ -869,32 +1355,42 @@ class _OrangePathRouter {
 }
 
 // ======================================================
-// GREEN ROUTE PAINTER
+// MULTI COLOR ROUTE PAINTER
 // ======================================================
-class _RoutePainter extends CustomPainter {
-  final List<Offset> poly;
-  _RoutePainter(this.poly);
+class _MultiRoutePainter extends CustomPainter {
+  final List<List<Offset>> segments;
+  _MultiRoutePainter(this.segments);
+
+  static final List<Color> _cycle = [
+    Colors.green,
+    Colors.blue,
+    Colors.purple,
+  ];
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (poly.length < 2) return;
+    for (int si = 0; si < segments.length; si++) {
+      final seg = segments[si];
+      if (seg.length < 2) continue;
 
-    final paint = Paint()
-      ..color = Colors.green.withOpacity(0.95)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+      final paint = Paint()
+        ..color = _cycle[si % _cycle.length].withOpacity(0.95)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 12
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
 
-    final path = ui.Path()..moveTo(poly[0].dx, poly[0].dy);
-    for (int i = 1; i < poly.length; i++) {
-      path.lineTo(poly[i].dx, poly[i].dy);
+      final path = ui.Path()..moveTo(seg[0].dx, seg[0].dy);
+      for (int i = 1; i < seg.length; i++) {
+        path.lineTo(seg[i].dx, seg[i].dy);
+      }
+      canvas.drawPath(path, paint);
     }
-    canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant _RoutePainter oldDelegate) => oldDelegate.poly != poly;
+  bool shouldRepaint(covariant _MultiRoutePainter oldDelegate) =>
+      oldDelegate.segments != segments;
 }
 
 // ======================================================

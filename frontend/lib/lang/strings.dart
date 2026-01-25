@@ -48,13 +48,13 @@ class Tr {
   String get privacyTerms => _t('privacy_terms');
   String get privacyTermsSubtitle => _t('privacy_terms_subtitle');
 
-// Dialog
+  // Dialog
   String get languageSelectTitle => _t('language_select_title');
   String get slovak => _t('lang_slovak');
   String get english => _t('lang_english');
   String get dutch => _t('lang_dutch');
 
-// Terms screen
+  // Terms screen
   String get termsTitle => _t('terms_title');
   String get privacyPolicyTitle => _t('privacy_policy_title');
   String get privacyPolicyBody => _t('privacy_policy_body');
@@ -62,6 +62,7 @@ class Tr {
   String get termsOfUseBody => _t('terms_of_use_body');
   String get contactTitle => _t('contact_title');
   String get contactBody => _t('contact_body');
+
   // Bottom menu
   String get menuProfile => _t('menu_profile');
   String get menuLogout => _t('menu_logout');
@@ -69,12 +70,14 @@ class Tr {
   String get menuRegister => _t('menu_register');
   String get menuSettings => _t('menu_settings');
   String get menuAbout => _t('menu_about');
+
   // About screen
   String get aboutTitle => _t('about_title');
   String get aboutAppName => _t('about_app_name');
   String get aboutVersion => _t('about_version');
   String get aboutDescription => _t('about_description');
   String get aboutAuthors => _t('about_authors');
+
   // Profile screen
   String get profilePlantsDiscovered => _t('profile_plants_discovered');
   String get profileRecentActivity => _t('profile_recent_activity');
@@ -83,9 +86,6 @@ class Tr {
 
   String get profileTitle => _t('profile_title');
   String get profileSubtitle => _t('profile_subtitle');
-
-  String profileMemberSince(String monthYear) =>
-      _t('profile_member_since').replaceAll('{monthYear}', monthYear);
 
   String profileProgressPlants(int found, int total) =>
       _t('profile_progress_plants')
@@ -98,6 +98,16 @@ class Tr {
   String get profileActivity1 => _t('profile_activity_1');
   String get profileActivity2 => _t('profile_activity_2');
   String get profileActivity3 => _t('profile_activity_3');
+
+  // ✅ NEW (for your ProfileScreen changes)
+  String get profileNoActivity => _t('profile_no_activity');
+  String get profileRecently => _t('profile_recently');
+  String profileDiscoveredPlant(String name) =>
+      _t('profile_discovered_plant').replaceAll('{name}', name);
+
+  String get profileGuest => _t('profile_guest');
+  String profileHello(String name) =>
+      _t('profile_hello').replaceAll('{name}', name);
 
   // Submit dialog
   String get submitTitle => _t('submit_title');
@@ -121,7 +131,8 @@ class Tr {
 
   String get cancel => _t('cancel');
   String get submitButton => _t('submit_button');
-// Discover screen
+
+  // Discover screen
   String get discoverTitle => _t('discover_title');
   String get discoverSubtitle => _t('discover_subtitle');
   String get discoverSearchHint => _t('discover_search_hint');
@@ -142,7 +153,8 @@ class Tr {
 
   String get discoverLastCollected => _t('discover_last_collected');
   String get discoverNotDiscoveredYet => _t('discover_not_discovered_yet');
-// Home / News
+
+  // Home / News
   String get homeHeaderTitle => _t('home_header_title');
   String get homeHeaderSubtitle => _t('home_header_subtitle');
 
@@ -165,12 +177,13 @@ class Tr {
   String get homeEmptyTitle => _t('home_empty_title');
   String get homeEmptySubtitle => _t('home_empty_subtitle');
   String plantDescription(int id) => _t('plant_${id}_desc');
-// Top story Education
+
+  // Top story Education
   String get homeTopEduTitle => _t('home_top_edu_title');
   String get homeTopEduSubtitle => _t('home_top_edu_subtitle');
   String get homeTagFeatured => _t('home_tag_featured');
 
-// Tags
+  // Tags
   String get homeTagStory => _t('home_tag_story');
   String get homeTagAnnouncement => _t('home_tag_announcement');
   String get homeTagUpdate => _t('home_tag_update');
@@ -185,7 +198,7 @@ class Tr {
   String get homeFallbackProcessSubtitle => _t('home_fallback_process_subtitle');
 
   String get homeTapToOpen => _t('home_tap_to_open');
-  // Plants screen
+
   // Plants screen
   String get plantsTitle => _t('plants_title');
   String get plantsSubtitle => _t('plants_subtitle');
@@ -197,6 +210,7 @@ class Tr {
   String get plantsSortDefault => _t('plants_sort_default');
   String get plantsSortAzOn => _t('plants_sort_az_on');
   String get plantsSortZaOn => _t('plants_sort_za_on');
+
   // Auth / Login / Register / Forgot password
   String get loginTitle => _t('login_title');
   String get loginWelcomeTitle => _t('login_welcome_title');
@@ -209,7 +223,7 @@ class Tr {
 
   String get loginFillAllFields => _t('login_fill_all_fields');
   String get loginSuccess => _t('login_success');
-  String get loginInvalidCreds => _t('login_invalid_creds');
+  String get loginInvalidCreds => _t('login_invalid_cres');
   String get loginDevOffline => _t('login_dev_offline');
 
   String get registerTitle => _t('register_title');
@@ -236,7 +250,8 @@ class Tr {
   String get forgotSendSuccess => _t('forgot_send_success');
   String get forgotSendError => _t('forgot_send_error');
   String get loginForgotPassword => _t('login_forgot_password');
-// Opening hours
+
+  // Opening hours
   String get openingHoursTitle => _t('opening_hours_title');
   String get openingHoursNowOpen => _t('opening_hours_now_open');
   String get openingHoursNowClosed => _t('opening_hours_now_closed');
@@ -251,7 +266,19 @@ class Tr {
 
   String get openingHoursClosed => _t('opening_hours_closed');
   String get openingHoursNote => _t('opening_hours_note');
+  String get ok => _t('ok');
 
+  String get mapOffsiteTitle => _t('map_offsite_title');
+  String get mapOffsiteBody => _t('map_offsite_body');
+
+  String get webEducationTitle => _t('web_education_title');
+  String get commonDiscovered => _t('common_discovered');
+  String get scanLoginFirst => _t('scan_login_first');
+
+  String get apiUnexpectedResponseFormat => _t('api_unexpected_response_format');
+  String get apiQrNotOurs => _t('api_qr_not_ours');
+  String get apiScanFailed => _t('api_scan_failed');
+  String get apiProfileLoadFailed => _t('api_profile_load_failed');
 }
 
 extension TrX on BuildContext {

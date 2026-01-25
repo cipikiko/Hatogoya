@@ -250,4 +250,26 @@ const Map<String, String> stringsEn = {
   'opening_hours_note':
   'Note: Opening hours may vary by season. Group visits can be arranged in advance outside the listed hours.',
 
+  'ok': 'OK',
+  'map_offsite_title': 'You are not at the botanical garden',
+  'map_offsite_body':
+  'Your current location is not within the botanical garden area. '
+      'We won’t display your GPS position on the map. '
+      'You can use the virtual avatar to simulate your position and test routes.',
+
+  'web_education_title': 'Education',
+
+  'common_discovered': 'Discovered',
+  'scan_login_first': 'Please log in first.',
+  'api_unexpected_response_format': 'Unexpected response format (not a JSON object).',
+  'api_qr_not_ours': 'This is not our QR code.',
+  'api_scan_failed': 'Scan failed.',
+  'api_profile_load_failed': 'Failed to load profile.',
+  'profile_no_activity': 'No activity yet.',
+  'profile_recently': 'Recently',
+  'profile_discovered_plant': 'Discovered plant: {name}',
+  'profile_guest': 'Guest',
+  'profile_hello': 'Signed in as {name}',
+
+
 };

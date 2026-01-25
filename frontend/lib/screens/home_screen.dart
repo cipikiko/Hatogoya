@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 import '../theme/tokens.dart';
 import '../theme/app_theme.dart';
 import '../widgets/neon.dart';
@@ -9,6 +7,7 @@ import '../models/news_item.dart';
 import '../services/news_service.dart';
 import '../services/lang_service.dart';
 import '../lang/strings.dart';
+import '../services/in_app_browser.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,16 +26,29 @@ class _HomeScreenState extends State<HomeScreen> {
   // refresh trigger (keď klikneš Retry)
   int _reloadTick = 0;
 
-  Future<void> _openUrl(String url) async {
+  // ✅ otvor v appke (WebView)
+  Future<void> _openUrl(String url, {String? title}) async {
     final tr = context.tr;
-    final uri = Uri.parse(url);
-    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!ok) {
+    final uri = Uri.tryParse(url);
+
+    if (uri == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(tr.homeCouldNotOpen)),
       );
+      return;
     }
+
+    if (!mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => InAppBrowserScreen(
+          url: url,
+          title: title ?? 'News',
+        ),
+      ),
+    );
   }
 
   void _retry() {
@@ -114,7 +126,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             snap.connectionState == ConnectionState.waiting ||
                                 snap.connectionState == ConnectionState.active;
 
-                        final errorMessage = snap.hasError ? tr.homeFailedLoad : null;
+                        final errorMessage =
+                        snap.hasError ? tr.homeFailedLoad : null;
 
                         final items = snap.data ?? const <NewsItem>[];
 
@@ -176,11 +189,17 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(Icons.error_outline, color: AppTokens.textSecondary),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(errorMessage, style: TextStyle(color: AppTokens.textSecondary)),
+              child: Text(
+                errorMessage,
+                style: TextStyle(color: AppTokens.textSecondary),
+              ),
             ),
             TextButton(
               onPressed: _retry,
-              child: Text(tr.homeRetry, style: TextStyle(color: AppTokens.emerald500)),
+              child: Text(
+                tr.homeRetry,
+                style: TextStyle(color: AppTokens.emerald500),
+              ),
             ),
           ],
         ),
@@ -211,8 +230,9 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 10),
         _TopStoryCard(
           item: topStory,
-          onTap: () => _openUrl(topStory.url),
+          onTap: () => _openUrl(topStory.url, title: tr.webEducationTitle),
         ),
+
         const SizedBox(height: 16),
 
         // ✅ NOVÉ: Otváracie hodiny (medzi Top príbeh a Najnovšie)
@@ -225,7 +245,10 @@ class _HomeScreenState extends State<HomeScreen> {
             if (showSeeAll)
               TextButton(
                 onPressed: () => _onSeeAllPressed(total),
-                child: Text(tr.homeSeeAll, style: TextStyle(color: AppTokens.emerald500)),
+                child: Text(
+                  tr.homeSeeAll,
+                  style: TextStyle(color: AppTokens.emerald500),
+                ),
               )
             else if (_seeAll)
               TextButton(
@@ -235,7 +258,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     _visibleCount = 2;
                   });
                 },
-                child: Text(tr.homeShowLess, style: TextStyle(color: AppTokens.emerald500)),
+                child: Text(
+                  tr.homeShowLess,
+                  style: TextStyle(color: AppTokens.emerald500),
+                ),
               )
           ],
         ),
@@ -248,7 +274,8 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(18),
             child: Column(
               children: [
-                Icon(Icons.inbox_outlined, color: AppTokens.textSecondary, size: 34),
+                Icon(Icons.inbox_outlined,
+                    color: AppTokens.textSecondary, size: 34),
                 const SizedBox(height: 10),
                 Text(
                   tr.homeEmptyTitle,
@@ -272,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.only(bottom: 12),
               child: _NewsRowCard(
                 item: n,
-                onTap: () => _openUrl(n.url),
+                onTap: () => _openUrl(n.url, title: n.title), // ✅ upravené
               ),
             ),
           ),
@@ -288,12 +315,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: Text(
                     tr.homeShowingOf(shown, total),
-                    style: TextStyle(color: AppTokens.textSecondary, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: AppTokens.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
                 TextButton(
                   onPressed: () => _loadMore(total),
-                  child: Text(tr.homeLoadMore, style: TextStyle(color: AppTokens.emerald500)),
+                  child: Text(
+                    tr.homeLoadMore,
+                    style: TextStyle(color: AppTokens.emerald500),
+                  ),
                 ),
               ],
             ),
@@ -345,7 +378,11 @@ class _HeaderText extends StatelessWidget {
       children: [
         Text(
           tr.homeHeaderTitle,
-          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
         ),
         const SizedBox(height: 2),
         Text(
@@ -380,8 +417,6 @@ class _SectionTitle extends StatelessWidget {
 
 /* ================== Otváracie hodiny ================== */
 
-/* ================== Otváracie hodiny ================== */
-
 class _OpeningHoursCard extends StatelessWidget {
   const _OpeningHoursCard();
 
@@ -389,7 +424,6 @@ class _OpeningHoursCard extends StatelessWidget {
   static const int _closeHour = 18;
 
   DateTime _now() {
-    // ak máš timezone initnuté, použije sa tz.local; inak fallback na DateTime.now()
     try {
       return tz.TZDateTime.now(tz.local);
     } catch (_) {
@@ -404,7 +438,6 @@ class _OpeningHoursCard extends StatelessWidget {
     final start = DateTime(now.year, now.month, now.day, _openHour, 0);
     final end = DateTime(now.year, now.month, now.day, _closeHour, 0);
 
-    // otvorené v intervale <09:00, 18:00)
     return !now.isBefore(start) && now.isBefore(end);
   }
 
@@ -422,7 +455,8 @@ class _OpeningHoursCard extends StatelessWidget {
             child: Text(
               day,
               style: TextStyle(
-                color: highlight ? AppTokens.textPrimary : AppTokens.textSecondary,
+                color:
+                highlight ? AppTokens.textPrimary : AppTokens.textSecondary,
                 fontWeight: highlight ? FontWeight.w900 : FontWeight.w800,
                 fontSize: 13,
               ),
@@ -432,7 +466,8 @@ class _OpeningHoursCard extends StatelessWidget {
             child: Text(
               hours,
               style: TextStyle(
-                color: highlight ? AppTokens.textPrimary : AppTokens.textSecondary,
+                color:
+                highlight ? AppTokens.textPrimary : AppTokens.textSecondary,
                 fontWeight: highlight ? FontWeight.w800 : FontWeight.w600,
                 fontSize: 13,
               ),
@@ -472,7 +507,8 @@ class _OpeningHoursCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: AppTokens.tealGradient,
                   borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                  boxShadow: AppTokens.glow(AppTokens.emerald500, blur: 10, alpha: .12),
+                  boxShadow:
+                  AppTokens.glow(AppTokens.emerald500, blur: 10, alpha: .12),
                 ),
                 child: const Icon(Icons.schedule_rounded, color: Colors.white),
               ),
@@ -506,7 +542,6 @@ class _OpeningHoursCard extends StatelessWidget {
           const SizedBox(height: 12),
           Divider(color: AppTokens.divider),
           const SizedBox(height: 6),
-
           _row(day: tr.weekdayMon, hours: hoursOpen, highlight: isToday(DateTime.monday)),
           _row(day: tr.weekdayTue, hours: hoursOpen, highlight: isToday(DateTime.tuesday)),
           _row(day: tr.weekdayWed, hours: hoursOpen, highlight: isToday(DateTime.wednesday)),
@@ -518,9 +553,7 @@ class _OpeningHoursCard extends StatelessWidget {
             hours: tr.openingHoursClosed,
             highlight: isToday(DateTime.sunday),
           ),
-
           const SizedBox(height: 10),
-
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -598,7 +631,8 @@ class _TopStoryCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(item.subtitle, style: TextStyle(color: AppTokens.textSecondary)),
+                  Text(item.subtitle,
+                      style: TextStyle(color: AppTokens.textSecondary)),
                 ],
               ),
             ),
@@ -636,7 +670,8 @@ class _NewsRowCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                 border: Border.all(color: AppTokens.cardBorder),
               ),
-              child: Icon(Icons.article_outlined, color: AppTokens.textSecondary),
+              child: Icon(Icons.article_outlined,
+                  color: AppTokens.textSecondary),
             ),
             const SizedBox(width: 12),
             Expanded(

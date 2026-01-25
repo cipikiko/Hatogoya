@@ -137,3 +137,4 @@ docker/data/
 *.orig
 *.cache
 *.log
+*.Zone.Identifier

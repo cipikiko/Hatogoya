@@ -6,25 +6,32 @@ import secrets
 from models import db, User
 from email_utils import send_verification_email
 from cleanup import cleanup_unverified_users
+from password_policy import validate_password  # ✅ add this
 
 register_bp = Blueprint("register", __name__)
 
 @register_bp.route("/register", methods=["POST"])
 def register():
-    # 🧼 zmaž staré neoverené účty (safe volať vždy)
+    # 🧼 delete old unverified accounts (safe to call always)
     cleanup_unverified_users()
 
     data = request.json or {}
-    username = data.get("username")
-    email = data.get("email")
-    password = data.get("password")
-    role = data.get("role", "visitor")
+    username = (data.get("username") or "").strip()
+    email = (data.get("email") or "").strip()
+    password = data.get("password") or ""
+    role = (data.get("role") or "visitor").strip()
 
     if not username or not email or not password:
-        return jsonify({"message": "Username, email, and password are required"}), 400
+        return jsonify({"message": "Username, email, and password are required."}), 400
+
+    # ✅ password policy (same rules as reset)
+    ok, msg = validate_password(password)
+    if not ok:
+        # msg comes from your policy (already English if you changed it there)
+        return jsonify({"message": msg or "Password does not meet requirements."}), 400
 
     if User.query.filter_by(email=email).first():
-        return jsonify({"message": "Email already exists"}), 400
+        return jsonify({"message": "Email already exists."}), 400
 
     hashed_password = generate_password_hash(password, method="pbkdf2:sha256")
     token = secrets.token_urlsafe(32)
@@ -46,7 +53,7 @@ def register():
         send_verification_email(email, token)
     except Exception as e:
         return jsonify({
-            "message": "User registered, but verification email failed to send",
+            "message": "User registered, but verification email failed to send.",
             "error": str(e)
         }), 500
 

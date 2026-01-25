@@ -57,7 +57,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Nepodarilo sa odoslať e-mail. Skús to neskôr.")),
+        const SnackBar(
+          content: Text("Failed to send e-email"),
+        ),
       );
     } finally {
       if (mounted) {
@@ -92,7 +94,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SizedBox(height: 6),
           Text(tr.forgotHeaderSubtitle, style: AppTokens.body),
           const SizedBox(height: 20),
-
           NeonCard(
             color: AppTokens.cardDark,
             shadows: AppTokens.tileShadow,
@@ -104,9 +105,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               decoration: _dec(tr.forgotEmailLabel),
             ),
           ),
-
           const SizedBox(height: 14),
-
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(

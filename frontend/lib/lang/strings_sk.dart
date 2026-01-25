@@ -249,4 +249,26 @@ const Map<String, String> stringsSk = {
   'opening_hours_note':
   'Poznámka: Otváracie hodiny sa môžu líšiť podľa sezóny. Skupinové návštevy je možné po dohode naplánovať aj mimo uvedených hodín.',
 
+  'ok': 'OK',
+  'map_offsite_title': 'Nenachádzaš sa v botanickej záhrade',
+  'map_offsite_body':
+  'Tvoja aktuálna poloha sa nenachádza v areáli botanickej záhrady. '
+      'GPS polohu preto na mape nezobrazíme. '
+      'Môžeš použiť virtuálneho panáčika na simuláciu polohy a testovanie trás.',
+
+  'web_education_title': 'Vzdelávanie',
+  'scan_login_first': 'Najprv sa prihlás.',
+  'common_discovered': 'Objavené',
+
+  'api_unexpected_response_format': 'Nečakaný formát odpovede (nie je JSON objekt).',
+  'api_qr_not_ours': 'Toto nie je náš QR kód.',
+  'api_scan_failed': 'Sken sa nepodaril.',
+  'api_profile_load_failed': 'Nepodarilo sa načítať profil.',
+
+  "profile_no_activity": "Zatiaľ žiadna aktivita.",
+  "profile_recently": "Nedávno",
+  "profile_discovered_plant": "Objavená rastlina: {name}",
+  "profile_guest": "Hosť",
+  "profile_hello": "Prihlásený ako {name}",
+
 };

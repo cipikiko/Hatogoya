@@ -249,4 +249,26 @@ const Map<String, String> stringsNl = {
   'opening_hours_note':
   'Let op: openingstijden kunnen per seizoen verschillen. Groepsbezoeken kunnen vooraf worden afgesproken buiten de aangegeven tijden.',
 
+  'ok': 'OK',
+  'map_offsite_title': 'Je bent niet in de botanische tuin',
+  'map_offsite_body':
+  'Je huidige locatie ligt niet binnen het gebied van de botanische tuin. '
+      'We tonen je GPS-positie daarom niet op de kaart. '
+      'Je kunt de virtuele avatar gebruiken om je positie te simuleren en routes te testen.',
+  'scan_login_first': 'Log eerst in.',
+
+  'web_education_title': 'Educatie',
+  'common_discovered': 'Ontdekt',
+
+  'api_unexpected_response_format': 'Onverwacht antwoordformaat (geen JSON-object).',
+  'api_qr_not_ours': 'Dit is niet onze QR-code.',
+  'api_scan_failed': 'Scannen is mislukt.',
+  'api_profile_load_failed': 'Profiel laden mislukt.',
+
+  "profile_no_activity": "Nog geen activiteit.",
+  "profile_recently": "Recent",
+  "profile_discovered_plant": "Ontdekte plant: {name}",
+  "profile_guest": "Gast",
+  "profile_hello": "Aangemeld als {name}",
+
 };
