@@ -271,4 +271,25 @@ const Map<String, String> stringsSk = {
   "profile_guest": "Hosť",
   "profile_hello": "Prihlásený ako {name}",
 
+  // Map
+  'map_asset_error': 'CHYBA ASSETU MAPY\n(skontroluj pubspec.yaml assets)',
+  'map_tap_only_inside_map': 'Klikni len do mapy.',
+  'map_cannot_load_map': 'Neviem načítať mapu.',
+
+  'map_place_mode_toast': 'Ťukni na oranžový chodník alebo marker a nastav si polohu.',
+  'map_place_mode_hint_banner':
+  'Vyber si virtuálnu polohu: ťukni na zvýraznený oranžový chodník alebo na marker.',
+
+  'map_virtual_removed': 'Virtuálna poloha odstránená.',
+  'map_virtual_set': 'Virtuálna poloha nastavená.',
+
+  'map_place_only_orange_or_marker':
+  'Sem nemôžeš – len na oranžový chodník alebo marker.',
+
+  'map_no_location_use_avatar':
+  'Nemám polohu. Použi panáčika alebo buď v lokalite.',
+  'map_select_points_first': 'Najprv vyber body.',
+  'map_no_route_missing_connection': 'Nenašiel som cestu (chýba spojenie).',
+  'map_no_route_segment': 'Nenašiel som cestu (segment).',
+
 };

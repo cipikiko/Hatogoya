@@ -215,39 +215,53 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 color: AppTokens.cardDark,
                 shadows: AppTokens.tileShadow,
                 radius: AppTokens.radiusMd,
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.zero, // ✅ padding presunieme do InkWell kontajnera
                 margin: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    Image.asset(
-                      plant.assetPath,
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 48,
-                        height: 48,
-                        color: AppTokens.cardDark,
-                        alignment: Alignment.center,
-                        child: Icon(Icons.image_not_supported_outlined, color: AppTokens.textSecondary),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        plant.name,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppTokens.textPrimary,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                  onTap: () => dialog.showPlantDialog(context, _toDialogPlant(plant)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+                          child: Image.asset(
+                            plant.assetPath,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 48,
+                              height: 48,
+                              color: AppTokens.cardDark,
+                              alignment: Alignment.center,
+                              child: Icon(
+                                Icons.image_not_supported_outlined,
+                                color: AppTokens.textSecondary,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            plant.name,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppTokens.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               );
             }).toList(),
           ),
+
         ],
       ),
     );

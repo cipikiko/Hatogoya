@@ -20,10 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController usernameCtrl = TextEditingController();
   final TextEditingController passwordCtrl = TextEditingController();
 
-  // ✅ DEV OFFLINE LOGIN
-  static const String _devUser = 'panic';
-  static const String _devPass = 'panic';
-
   InputDecoration _dec(String label) => InputDecoration(
     labelText: label,
     labelStyle: TextStyle(color: AppTokens.textSecondary),
@@ -48,22 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(tr.loginFillAllFields)),
-      );
-      return;
-    }
-
-    // ✅ OFFLINE DEV BYPASS
-    if (username.toLowerCase() == _devUser && password == _devPass) {
-      await AuthService.saveToken('DEV_TOKEN');
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(tr.loginDevOffline)),
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
       );
       return;
     }

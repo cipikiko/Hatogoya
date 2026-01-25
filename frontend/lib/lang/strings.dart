@@ -279,6 +279,26 @@ class Tr {
   String get apiQrNotOurs => _t('api_qr_not_ours');
   String get apiScanFailed => _t('api_scan_failed');
   String get apiProfileLoadFailed => _t('api_profile_load_failed');
+
+
+
+  // Map / routing
+  String get mapAssetError => _t('map_asset_error');
+  String get mapTapOnlyInsideMap => _t('map_tap_only_inside_map');
+  String get mapCannotLoadMap => _t('map_cannot_load_map');
+
+  String get mapPlaceModeToast => _t('map_place_mode_toast');
+  String get mapPlaceModeHintBanner => _t('map_place_mode_hint_banner');
+
+  String get mapVirtualRemoved => _t('map_virtual_removed');
+  String get mapVirtualSet => _t('map_virtual_set');
+
+  String get mapPlaceOnlyOrangeOrMarker => _t('map_place_only_orange_or_marker');
+
+  String get mapNoLocationUseAvatar => _t('map_no_location_use_avatar');
+  String get mapSelectPointsFirst => _t('map_select_points_first');
+  String get mapNoRouteMissingConnection => _t('map_no_route_missing_connection');
+  String get mapNoRouteSegment => _t('map_no_route_segment');
 }
 
 extension TrX on BuildContext {

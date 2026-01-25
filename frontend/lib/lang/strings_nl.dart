@@ -271,4 +271,26 @@ const Map<String, String> stringsNl = {
   "profile_guest": "Gast",
   "profile_hello": "Aangemeld als {name}",
 
+  // Map
+  'map_asset_error': 'KAART-ASSETFOUT\n(controleer pubspec.yaml assets)',
+  'map_tap_only_inside_map': 'Tik alleen binnen de kaart.',
+  'map_cannot_load_map': 'Kan de kaart niet laden.',
+
+  'map_place_mode_toast': 'Tik op het oranje pad of een marker en stel je positie in.',
+  'map_place_mode_hint_banner':
+  'Kies je virtuele positie: tik op het gemarkeerde oranje pad of op een marker.',
+
+  'map_virtual_removed': 'Virtuele positie verwijderd.',
+  'map_virtual_set': 'Virtuele positie ingesteld.',
+
+  'map_place_only_orange_or_marker':
+  'Hier niet toegestaan — alleen op het oranje pad of op een marker.',
+
+  'map_no_location_use_avatar':
+  'Ik heb geen positie. Gebruik de avatar of wees ter plaatse.',
+  'map_select_points_first': 'Selecteer eerst punten.',
+  'map_no_route_missing_connection': 'Geen route gevonden (geen verbinding).',
+  'map_no_route_segment': 'Geen route gevonden (segment).',
+
+
 };

@@ -271,5 +271,25 @@ const Map<String, String> stringsEn = {
   'profile_guest': 'Guest',
   'profile_hello': 'Signed in as {name}',
 
+  // Map
+  'map_asset_error': 'MAP ASSET ERROR\n(check pubspec.yaml assets)',
+  'map_tap_only_inside_map': 'Tap only inside the map.',
+  'map_cannot_load_map': 'I can’t load the map.',
+
+  'map_place_mode_toast': 'Tap the orange path or a marker and set your position.',
+  'map_place_mode_hint_banner':
+  'Choose your virtual position: tap the highlighted orange path or a marker.',
+
+  'map_virtual_removed': 'Virtual position removed.',
+  'map_virtual_set': 'Virtual position set.',
+
+  'map_place_only_orange_or_marker':
+  'Not allowed here — only on the orange path or a marker.',
+
+  'map_no_location_use_avatar':
+  'I don’t have your position. Use the avatar or be on-site.',
+  'map_select_points_first': 'Select points first.',
+  'map_no_route_missing_connection': 'No route found (missing connection).',
+  'map_no_route_segment': 'No route found (segment).',
 
 };

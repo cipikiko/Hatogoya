@@ -24,7 +24,7 @@ class _GameScreenState extends State<GameScreen> {
   final TransformationController _tc = TransformationController();
   StreamSubscription<Position>? _posSub;
 
- /* static const bool useMockLocation = true; // TESTOVANIE
+  /* static const bool useMockLocation = true; // TESTOVANIE
   Offset? _mockMePx;*/
 
   LatLng? _meGps;
@@ -153,7 +153,7 @@ class _GameScreenState extends State<GameScreen> {
     return (_meGps == null) ? null : _gpsToPixel(_meGps!);
   }
 
- /* Offset? _mePxRaw() { TESTOVANIE
+  /* Offset? _mePxRaw() { TESTOVANIE
     // ✅ priorita: virtuálna poloha (panáčik)
     if (_virtualMePx != null) return _virtualMePx;
 
@@ -272,8 +272,8 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _initLocation() async {
     final enabled = await Geolocator.isLocationServiceEnabled();
     if (!enabled) return;
-  // ✅ DEV mock poloha hneď na začiatku _initLocation()
-   /* if (useMockLocation) { TESTOVANIE
+    // ✅ DEV mock poloha hneď na začiatku _initLocation()
+    /* if (useMockLocation) { TESTOVANIE
       // bod 16 (marker 16) = index 15 (0-based)
       const int idx = 15;
 
@@ -383,7 +383,8 @@ class _GameScreenState extends State<GameScreen> {
       _routeSegmentsPx = [];
     });
 
-    _toast('Virtuálna poloha odstránená.');
+    _toast(context.tr.mapVirtualRemoved);
+
   }
 
   Future<void> _togglePlaceMode() async {
@@ -394,7 +395,7 @@ class _GameScreenState extends State<GameScreen> {
 
     await _ensureMasks();
     if (_orangeMask == null || _gw == 0 || _gh == 0) {
-      _toast('Neviem načítať mapu.');
+      _toast(context.tr.mapCannotLoadMap);
       return;
     }
 
@@ -408,7 +409,8 @@ class _GameScreenState extends State<GameScreen> {
         targetPx: const Offset(mapWidthPx / 2, mapHeightPx / 2),
         scale: _currentScale().clamp(_minScale, _maxScale).toDouble(),
       );
-      _toast('Ťukni na oranžový chodník alebo marker a nastav si polohu.');
+      _toast(context.tr.mapPlaceModeToast);
+
     }
   }
 
@@ -419,7 +421,8 @@ class _GameScreenState extends State<GameScreen> {
       _following = true;
     });
     _centerOnMe();
-    _toast('Virtuálna poloha nastavená.');
+    _toast(context.tr.mapVirtualSet);
+
   }
 
   void _handleTapForPlaceMode(Offset viewportLocalPos) {
@@ -428,7 +431,7 @@ class _GameScreenState extends State<GameScreen> {
 
     final scenePx = _tc.toScene(viewportLocalPos);
     if (!_insideMap(scenePx)) {
-      _toast('Klikni len do mapy.');
+      _toast(context.tr.mapTapOnlyInsideMap);
       return;
     }
 
@@ -461,12 +464,14 @@ class _GameScreenState extends State<GameScreen> {
 
     final snapped = router.snapPx(scenePx);
     if (snapped == null) {
-      _toast('Sem nemôžeš – len na oranžový chodník alebo marker.');
+      _toast(context.tr.mapPlaceOnlyOrangeOrMarker);
+
       return;
     }
 
     if ((snapped - scenePx).distance > 40) {
-      _toast('Sem nemôžeš – len na oranžový chodník alebo marker.');
+      _toast(context.tr.mapPlaceOnlyOrangeOrMarker);
+
       return;
     }
 
@@ -523,17 +528,19 @@ class _GameScreenState extends State<GameScreen> {
 
     var mePx = _mePxClamped();
     if (mePx == null) {
-      _toast('Nemám polohu. Použi panáčika alebo buď v lokalite.');
+      _toast(context.tr.mapNoLocationUseAvatar);
       return;
     }
     if (_selectedPlants.isEmpty) {
-      _toast('Najprv vyber body.');
+      _toast(context.tr.mapSelectPointsFirst);
+
       return;
     }
 
     await _ensureMasks();
     if (_orangeMask == null || _comboMask == null) {
-      _toast('Neviem načítať mapu.');
+      _toast(context.tr.mapCannotLoadMap);
+
       return;
     }
 
@@ -577,7 +584,8 @@ class _GameScreenState extends State<GameScreen> {
       }
 
       if (bestTarget == null || bestCost.isInfinite) {
-        _toast('Nenašiel som cestu (chýba spojenie).');
+        _toast(context.tr.mapNoRouteMissingConnection);
+
         return;
       }
 
@@ -586,7 +594,8 @@ class _GameScreenState extends State<GameScreen> {
 
       final seg = router.routePx(startPx, plantPx[bestTarget]);
       if (seg.isEmpty) {
-        _toast('Nenašiel som cestu (segment).');
+        _toast(context.tr.mapNoRouteSegment);
+
         return;
       }
 
@@ -907,14 +916,15 @@ class _GameScreenState extends State<GameScreen> {
                         child: Image.asset(
                           mapImageAsset,
                           fit: BoxFit.fill,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (ctx, __, ___) => Container(
                             color: Colors.white,
                             alignment: Alignment.center,
-                            child: const Text(
-                              'MAP ASSET ERROR\n(skús pubspec.yaml assets)',
+                            child: Text(
+                              ctx.tr.mapAssetError,
                               textAlign: TextAlign.center,
                             ),
                           ),
+
                         ),
                       ),
 
@@ -1038,16 +1048,15 @@ class _GameScreenState extends State<GameScreen> {
                     color: const Color(0xFF0B1B22).withOpacity(0.85),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: const Color(0x5500BCD4)),
+                  ),child: Text(
+                  context.tr.mapPlaceModeHintBanner,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
                   ),
-                  child: const Text(
-                    'Vyber si virtuálnu polohu: ťukni na zvýraznený oranžový chodník alebo na marker.',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      height: 1.2,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                  textAlign: TextAlign.center,
+                ),
                 ),
               ),
             ),
