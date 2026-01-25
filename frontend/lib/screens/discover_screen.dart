@@ -101,7 +101,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     final tr = context.tr;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scanGradient = isDark ? AppTokens.tealGradientDark : AppTokens.tealGradientLight;
     final totalPlants = data.plants.length;
     final progress = totalPlants == 0 ? 0.0 : (foundPlants / totalPlants).clamp(0.0, 1.0);
     final percent = (progress * 100).round();
@@ -125,7 +126,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           GestureDetector(
             onTap: _startScan,
             child: NeonCard(
-              gradient: AppTokens.tealGradient,
+              gradient: scanGradient, // ✅ tu
               shadows: AppTokens.glow(AppTokens.green400, blur: 18),
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               radius: AppTokens.radiusMd,

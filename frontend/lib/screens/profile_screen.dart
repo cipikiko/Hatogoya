@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/plants_data.dart';
+import '../game/plant_dialog.dart' as dialog;
 import '../lang/strings.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -18,7 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = true;
   String? _error;
 
-  String? _username; // ✅ added
+  String? _username;
   int _foundPlants = 0;
   List<int> _lastPlantIds = const [];
 
@@ -27,6 +28,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _load();
   }
+
+  dialog.PlantItem _toDialogPlant(PlantItem p) => dialog.PlantItem(
+    id: p.id,
+    name: p.name,
+    assetPath: p.assetPath,
+  );
 
   Future<void> _load() async {
     setState(() {
@@ -42,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (!mounted) return;
       setState(() {
-        _username = (prof['username'] as String?)?.trim(); // ✅ added
+        _username = (prof['username'] as String?)?.trim();
         _foundPlants = (prof['foundCount'] as num?)?.toInt() ?? 0;
         _lastPlantIds = List<int>.from(prof['lastPlants'] ?? const []);
         _loading = false;
@@ -61,8 +68,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final tr = context.tr;
 
     final totalPlants = plants.length; // 26
-    final progress = totalPlants == 0 ? 0.0 : (_foundPlants / totalPlants).clamp(0.0, 1.0);
+    final progress =
+    totalPlants == 0 ? 0.0 : (_foundPlants / totalPlants).clamp(0.0, 1.0);
 
+    // ✅ rovnaké dáta ako predtým, len render bude "Discover-style"
     final recentPlants = _lastPlantIds
         .map((id) => plantById[id])
         .whereType<PlantItem>()
@@ -94,7 +103,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-
                   if (_loading)
                     const LinearProgressIndicator(minHeight: 6)
                   else if (_error != null)
@@ -103,19 +111,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Expanded(
                           child: Text(
                             _error!,
-                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                         TextButton(
                           onPressed: _load,
-                          child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                          child: const Text(
+                            'Retry',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ],
                     )
                   else ...[
                       Text(
                         tr.profilePlantsDiscovered,
-                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                        style:
+                        const TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                       const SizedBox(height: 6),
                       ClipRRect(
@@ -124,7 +139,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           value: progress,
                           minHeight: 8,
                           backgroundColor: Colors.white24,
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor:
+                          const AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -132,7 +148,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         alignment: Alignment.centerRight,
                         child: Text(
                           tr.profileProgressPlants(_foundPlants, totalPlants),
-                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          style:
+                          const TextStyle(color: Colors.white, fontSize: 13),
                         ),
                       ),
                     ],
@@ -153,19 +170,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 10),
 
+          // ✅ TU je zmena: "Recent activity" ako v DiscoverScreen (obrázok + názov + klik)
           if (_loading)
-            const Center(child: Padding(padding: EdgeInsets.all(10), child: CircularProgressIndicator()))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(10),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else if (_error != null)
             Text(_error!, style: TextStyle(color: AppTokens.textSecondary))
           else if (recentPlants.isEmpty)
-              Text(tr.profileNoActivity, style: TextStyle(color: AppTokens.textSecondary))
+              Text(tr.profileNoActivity,
+                  style: TextStyle(color: AppTokens.textSecondary))
             else
               Column(
-                children: recentPlants.map((p) {
-                  return _ActivityCard(
-                    title: tr.profileDiscoveredPlant(p.name),
-                    date: tr.profileRecently,
-                    color: const Color(0xFF81C784),
+                children: recentPlants.map((plant) {
+                  return NeonCard(
+                    color: AppTokens.cardDark,
+                    shadows: AppTokens.tileShadow,
+                    radius: AppTokens.radiusMd,
+                    padding: EdgeInsets.zero, // rovnako ako v Discover
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+                      onTap: () =>
+                          dialog.showPlantDialog(context, _toDialogPlant(plant)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius:
+                              BorderRadius.circular(AppTokens.radiusSm),
+                              child: Image.asset(
+                                plant.assetPath,
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 48,
+                                  height: 48,
+                                  color: AppTokens.cardDark,
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: AppTokens.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                plant.name,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTokens.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   );
                 }).toList(),
               ),
@@ -185,9 +254,8 @@ class _HeaderTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final tr = context.tr;
 
-    final displayName = (username == null || username!.isEmpty)
-        ? tr.profileGuest
-        : username!;
+    final displayName =
+    (username == null || username!.isEmpty) ? tr.profileGuest : username!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,6 +278,7 @@ class _HeaderTitle extends StatelessWidget {
   }
 }
 
+// (Nechávam tu _StatBox ak ho používaš inde / do budúcna)
 class _StatBox extends StatelessWidget {
   final String label;
   final String value;
@@ -240,7 +309,9 @@ class _StatBox extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                 boxShadow: AppTokens.glow(AppTokens.green400, blur: 10),
               ),
-              child: Center(child: Icon(icon, color: Colors.white, size: 22)),
+              child: Center(
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
             ),
             const SizedBox(height: 10),
             Text(
@@ -257,63 +328,6 @@ class _StatBox extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ActivityCard extends StatelessWidget {
-  final String title;
-  final String date;
-  final Color color;
-
-  const _ActivityCard({
-    required this.title,
-    required this.date,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return NeonCard(
-      color: AppTokens.cardDark,
-      shadows: AppTokens.tileShadow,
-      radius: AppTokens.radiusMd,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.30),
-              borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-            ),
-            child: const Icon(Icons.eco, color: AppTokens.emerald500),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: AppTokens.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  date,
-                  style: TextStyle(color: AppTokens.textSecondary, fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
